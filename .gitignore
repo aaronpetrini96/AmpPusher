@@ -1,0 +1,22 @@
+.DS_Store
+
+# audio: too large for git
+recordings/**/*.wav
+recordings/sources/
+recordings/audioGenerator/
+
+# DAW sessions and caches
+ReaperProjectTesting/
+*.reapeaks
+*.rpp-bak
+
+# python
+.venv/
+__pycache__/
+*.pt
+
+# builds
+build/
+cmake-build-*/
+.idea/
+.vscode/

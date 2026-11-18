@@ -1,0 +1,6 @@
+[submodule "libs/JUCE"]
+	path = libs/JUCE
+	url = https://github.com/juce-framework/JUCE.git
+[submodule "libs/RTNeural"]
+	path = libs/RTNeural
+	url = https://github.com/jatinchowdhury18/RTNeural.git
