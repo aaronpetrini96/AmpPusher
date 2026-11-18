@@ -45,5 +45,4 @@ int main(int argc, char* argv[])
 
     std::cout << pedal << " max error: " << maxError << (maxError < 1e-4f ? " PASS" : " FAIL") << std::endl;
     return maxError < 1e-4f ? 0 : 1;
-
 }
