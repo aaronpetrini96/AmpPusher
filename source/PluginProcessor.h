@@ -41,9 +41,11 @@ private:
     std::array<PedalModel, 2> models808;
     std::array<PedalModel, 2> modelsS1D;
     int activeODMode {0};
+    juce::SmoothedValue<float> switchCrossfade {1.0f};
 
     juce::SmoothedValue<float> smoothedDrive {0.0f};
-    juce::SmoothedValue<float> smoothedLevelGain {1.0f};
+    juce::SmoothedValue<float> smoothedGain808 {1.0f};
+    juce::SmoothedValue<float> smoothedGainS1D {1.0f};
     juce::SmoothedValue<float> smoothedBright {0.0f};
 
     juce::AudioParameterFloat* driveParam {nullptr};
@@ -63,6 +65,14 @@ private:
     }
 
     void linkParameters();
+
+    enum class SmootherUpdateMode
+    {
+        initialize,
+        liveInRealTime
+    };
+
+    void updateSmoothersFromParams (SmootherUpdateMode mode);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AmpPusherProcessor)
 };

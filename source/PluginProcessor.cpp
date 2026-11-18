@@ -16,44 +16,58 @@ void AmpPusherProcessor::prepareToPlay (double sampleRate, int)
     for (auto* models : {&models808, &modelsS1D})
         for (auto& model : *models)
             model.reset();
+
     activeODMode = odModeParam->getIndex();
+
+    switchCrossfade.reset (sampleRate, 0.02);
+    switchCrossfade.setCurrentAndTargetValue (1.0f);
+
     constexpr double smoothingTime = 0.05;
-    smoothedDrive.reset (sampleRate, smoothingTime);
-    smoothedDrive.setCurrentAndTargetValue (driveParam->get());
-    smoothedBright.reset(sampleRate, smoothingTime);
-    smoothedBright.setCurrentAndTargetValue (brightParam->get() ? 1.0f : 0.0f);
-    smoothedLevelGain.reset (sampleRate, smoothingTime);
-    smoothedLevelGain.setCurrentAndTargetValue (levelToGain (levelParam->get(), activeODMode));
+    for (auto* smoother : {&smoothedDrive, &smoothedBright, &smoothedGain808, &smoothedGainS1D})
+        smoother->reset (sampleRate, smoothingTime);
+
+    updateSmoothersFromParams (SmootherUpdateMode::initialize);
 }
 
 void AmpPusherProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
 {
     juce::ScopedNoDenormals noDenormals;
-    smoothedDrive.setTargetValue(driveParam->get());
-    smoothedBright.setTargetValue(brightParam->get() ? 1.0f : 0.0f);
-    
+    updateSmoothersFromParams (SmootherUpdateMode::liveInRealTime);
+
     const auto odModeIndex = odModeParam->getIndex();
     auto& activeModels = odModeIndex == 0 ? models808 : modelsS1D;
-    
-    if (activeODMode != odModeIndex) 
+    auto& previousModels = odModeIndex == 0 ? modelsS1D : models808;
+
+    if (activeODMode != odModeIndex)
     {
         for (auto& model : activeModels)
             model.reset();
         activeODMode = odModeIndex;
+
+        switchCrossfade.setCurrentAndTargetValue(0.0f);
+        switchCrossfade.setTargetValue(1.0f);
     }
-    smoothedLevelGain.setTargetValue(levelToGain(levelParam->get(), odModeIndex));
 
     const int numChannels = std::min(buffer.getNumChannels(), static_cast<int>(activeModels.size()));
 
-    for (int n = 0; n < buffer.getNumSamples(); ++n) {
+    for (int n = 0; n < buffer.getNumSamples(); ++n)
+    {
         const float drive = smoothedDrive.getNextValue();
         const float bright = smoothedBright.getNextValue();
-        const float level = smoothedLevelGain.getNextValue();
+        const float gain808 = smoothedGain808.getNextValue();
+        const float gainS1D = smoothedGainS1D.getNextValue();
+        const float activeGain = odModeIndex == 0 ? gain808 : gainS1D;
+        const float previousGain = odModeIndex == 0 ? gainS1D : gain808;
+        const float switchCrossfadeValue = switchCrossfade.getNextValue();
 
-        for (int ch = 0; ch < numChannels; ++ch) {
+        for (int ch = 0; ch < numChannels; ++ch)
+        {
             auto* channelData = buffer.getWritePointer(ch);
             const float modelInput[3] {channelData[n], drive, bright};
-            channelData[n] = activeModels[static_cast<size_t>(ch)].forward (modelInput) * level;
+            float pedalOutput = activeModels[static_cast<size_t>(ch)].forward(modelInput) * activeGain;
+            if (switchCrossfadeValue < 1.0f)
+                pedalOutput = pedalOutput * switchCrossfadeValue + previousModels[static_cast<size_t>(ch)].forward(modelInput) * previousGain * (1.0f - switchCrossfadeValue);
+            channelData[n] = pedalOutput;
         }
     }
 }
@@ -104,6 +118,23 @@ void AmpPusherProcessor::linkParameters()
     brightParam = getParam<juce::AudioParameterBool> (ParamNames::getBrightNames().id);
     levelParam = getParam<juce::AudioParameterFloat> (ParamNames::getLevelNames().id);
     odModeParam = getParam<juce::AudioParameterChoice> (ParamNames::getODModeNames().id);
+}
+
+void AmpPusherProcessor::updateSmoothersFromParams (SmootherUpdateMode mode)
+{
+    const auto update = [mode] (juce::SmoothedValue<float>& smoother, float value)
+    {
+        if (mode == SmootherUpdateMode::initialize)
+            smoother.setCurrentAndTargetValue (value);
+        else
+            smoother.setTargetValue (value);
+    };
+
+    const float level = levelParam->get();
+    update (smoothedDrive, driveParam->get());
+    update (smoothedBright, brightParam->get() ? 1.0f : 0.0f);
+    update (smoothedGain808, levelToGain (level, 0));
+    update (smoothedGainS1D, levelToGain (level, 1));
 }
 
 void AmpPusherProcessor::loadModels (std::array<PedalModel, 2>& models, const char* jsonData, int jsonSize)
