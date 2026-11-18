@@ -38,7 +38,10 @@ private:
                                         RTNeural::GRULayerT<float, 3, 32>,
                                         RTNeural::DenseT<float, 32, 1>>;
 
-    std::array<PedalModel, 2> pedalModels {};
+    std::array<PedalModel, 2> models808;
+    std::array<PedalModel, 2> modelsS1D;
+    int activeODMode {0};
+
     juce::SmoothedValue<float> smoothedDrive {0.0f};
     juce::SmoothedValue<float> smoothedLevelGain {1.0f};
     juce::SmoothedValue<float> smoothedBright {0.0f};
@@ -48,7 +51,8 @@ private:
     juce::AudioParameterFloat* levelParam {nullptr};
     juce::AudioParameterChoice* odModeParam {nullptr};
 
-    static float levelToGain (float level);
+    static float levelToGain (float level, int odMode);
+    static void loadModels (std::array<PedalModel, 2>& models, const char* jsonData, int jsonSize);
 
     template <typename ParamType>
     ParamType* getParam (const juce::String& paramID)
