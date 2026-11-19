@@ -50,7 +50,7 @@ def main() -> None:
         loss.backward()
         optimizer.step()
 
-        if step % 100 == 0:
+        if step % 500 == 0:
             with torch.no_grad():
                 validation_loss = esr(model(validation_inputs), validation_targets, arguments.warm_up).item()
             if validation_loss < best_validation_loss:
