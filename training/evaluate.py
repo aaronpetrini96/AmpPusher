@@ -24,20 +24,20 @@ def null_depths(pedal: str) -> list[tuple[float, float, float]]:
 
     dry = dataset.dry[dataset.validation_start :]
     wet = dataset.wet[:, dataset.validation_start :]
-    setting_count, sample_count = wet.shape
-
-    dry_batch = np.repeat(dry[None, :, None], setting_count, axis=0)
-    condition_batch = np.repeat(dataset.conditions[:, None, :], sample_count, axis=1)
-    inputs = torch.from_numpy(np.concatenate([dry_batch, condition_batch], axis=2))
-
-    with torch.no_grad():
-        predictions = model(inputs)[..., 0].numpy()
-
     warm_up = 200
-    residue = predictions[:, warm_up:] - wet[:, warm_up:]
-    signal_power = np.sum(wet[:, warm_up:] ** 2, axis=1)
-    residue_power = np.sum(residue**2, axis=1)
-    depths = 10 * np.log10(signal_power / residue_power)
+
+    depths = []
+    for group in np.array_split(np.arange(len(wet)), 3):
+        group_wet = wet[group]
+        dry_batch = np.repeat(dry[None, :, None], len(group), axis=0)
+        condition_batch = np.repeat(dataset.conditions[group][:, None, :], len(dry), axis=1)
+        inputs = torch.from_numpy(np.concatenate([dry_batch, condition_batch], axis=2))
+        with torch.no_grad():
+            predictions = model(inputs)[..., 0].numpy()
+        residue = predictions[:, warm_up:] - group_wet[:, warm_up:]
+        signal_power = np.sum(group_wet[:, warm_up:] ** 2, axis=1)
+        depths.extend(10 * np.log10(signal_power / np.sum(residue**2, axis=1)))
+
     return [(drive, tone, depth) for (drive, tone), depth in zip(dataset.conditions, depths)]
 
 
