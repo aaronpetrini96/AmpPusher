@@ -1,4 +1,5 @@
 import argparse
+
 import numpy as np
 import torch
 
@@ -31,7 +32,9 @@ def main() -> None:
     rng = np.random.default_rng(arguments.seed)
 
     dataset = PedalDataset.load(arguments.pedal)
-    validation_inputs, validation_targets = dataset.batch(np.random.default_rng(999), 64, arguments.chunk_length, validation=True)
+    validation_inputs, validation_targets = dataset.batch(
+        np.random.default_rng(999), 64, arguments.chunk_length, validation=True
+    )
 
     model = PedalNet(hidden_size=arguments.hidden_size)
     optimizer = torch.optim.Adam(model.parameters(), lr=arguments.learning_rate)
@@ -53,7 +56,9 @@ def main() -> None:
             if validation_loss < best_validation_loss:
                 best_validation_loss = validation_loss
                 torch.save({"state_dict": model.state_dict(), "config": vars(arguments)}, checkpoint_path)
-            print(f"step {step}: training {loss.item():.5f}, validation {validation_loss:.5f}, best {best_validation_loss:.5f}")
+            print(
+                f"step {step}: training {loss.item():.5f}, validation {validation_loss:.5f}, best {best_validation_loss:.5f}"
+            )
 
 
 if __name__ == "__main__":

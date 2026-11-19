@@ -22,8 +22,8 @@ def null_depths(pedal: str) -> list[tuple[float, float, float]]:
     dataset = PedalDataset.load(pedal)
     model, _ = load_model(pedal)
 
-    dry = dataset.dry[dataset.validation_start:]
-    wet = dataset.wet[:, dataset.validation_start:]
+    dry = dataset.dry[dataset.validation_start :]
+    wet = dataset.wet[:, dataset.validation_start :]
     setting_count, sample_count = wet.shape
 
     dry_batch = np.repeat(dry[None, :, None], setting_count, axis=0)
@@ -36,7 +36,7 @@ def null_depths(pedal: str) -> list[tuple[float, float, float]]:
     warm_up = 200
     residue = predictions[:, warm_up:] - wet[:, warm_up:]
     signal_power = np.sum(wet[:, warm_up:] ** 2, axis=1)
-    residue_power = np.sum(residue ** 2, axis=1)
+    residue_power = np.sum(residue**2, axis=1)
     depths = 10 * np.log10(signal_power / residue_power)
     return [(drive, bright, depth) for (drive, bright), depth in zip(dataset.conditions, depths)]
 
