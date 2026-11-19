@@ -46,10 +46,10 @@ private:
     juce::SmoothedValue<float> smoothedDrive {0.0f};
     juce::SmoothedValue<float> smoothedGain808 {1.0f};
     juce::SmoothedValue<float> smoothedGainS1D {1.0f};
-    juce::SmoothedValue<float> smoothedBright {0.0f};
+    juce::SmoothedValue<float> smoothedTone {0.5f};
 
     juce::AudioParameterFloat* driveParam {nullptr};
-    juce::AudioParameterBool* brightParam {nullptr};
+    juce::AudioParameterFloat* toneParam {nullptr};
     juce::AudioParameterFloat* levelParam {nullptr};
     juce::AudioParameterChoice* odModeParam {nullptr};
 
