@@ -14,7 +14,7 @@ SWEEP_TO_DI_GAP_SECONDS = 1.0
 VALIDATION_FRACTION = 0.2
 
 DRIVE_SETTINGS = {0.0: "000", 0.25: "025", 0.5: "050", 0.75: "075", 1.0: "100"}
-BRIGHT_SETTINGS = {0.0: "05", 1.0: "10"}
+TONE_SETTINGS = {0.0: "000", 0.25: "025", 0.5: "050", 0.75: "075", 1.0: "100"}
 
 PEDAL_DIRS = {
     "ts808": RECORDINGS_DIR / "ts808",
@@ -27,6 +27,6 @@ def di_start_sample() -> int:
     return sf.info(SWEEP_FILE).frames + int(SWEEP_TO_DI_GAP_SECONDS * SAMPLE_RATE)
 
 
-def render_file(pedal: str, drive: float, bright: float) -> Path:
-    """Path of the render captured at the given drive and bright settings."""
-    return PEDAL_DIRS[pedal] / f"drive_{DRIVE_SETTINGS[drive]}_tone_{BRIGHT_SETTINGS[bright]}.wav"
+def render_file(pedal: str, drive: float, tone: float) -> Path:
+    """Path of the render captured at the given drive and tone settings."""
+    return PEDAL_DIRS[pedal] / f"drive_{DRIVE_SETTINGS[drive]}_tone_{TONE_SETTINGS[tone]}.wav"

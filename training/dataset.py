@@ -9,9 +9,9 @@ import soundfile as sf
 import torch
 
 from training.pedals import (
-    BRIGHT_SETTINGS,
     DRIVE_SETTINGS,
     INPUT_FILE,
+    TONE_SETTINGS,
     VALIDATION_FRACTION,
     di_start_sample,
     render_file,
@@ -36,8 +36,8 @@ class PedalDataset:
     @classmethod
     def load(cls, pedal: str) -> "PedalDataset":
         """Reads the input file and every render of the pedal, trimmed to a common length."""
-        settings = list(itertools.product(DRIVE_SETTINGS, BRIGHT_SETTINGS))
-        renders = [_read_mono(render_file(pedal, drive, bright)) for drive, bright in settings]
+        settings = list(itertools.product(DRIVE_SETTINGS, TONE_SETTINGS))
+        renders = [_read_mono(render_file(pedal, drive, tone)) for drive, tone in settings]
         dry = _read_mono(INPUT_FILE)
 
         length = min(len(dry), *(len(render) for render in renders))
@@ -52,7 +52,7 @@ class PedalDataset:
     def batch(
         self, rng: np.random.Generator, chunk_count: int, chunk_length: int, validation: bool = False
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        """Random chunks as model inputs (chunks, samples, 3) = [audio, drive, bright] and targets (chunks, samples, 1)."""
+        """Random chunks as model inputs (chunks, samples, 3) = [audio, drive, tone] and targets (chunks, samples, 1)."""
         first, last = (self.validation_start, len(self.dry)) if validation else (0, self.validation_start)
         starts = rng.integers(first, last - chunk_length, size=chunk_count)
         settings = rng.integers(0, len(self.wet), size=chunk_count)

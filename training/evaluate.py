@@ -38,15 +38,15 @@ def null_depths(pedal: str) -> list[tuple[float, float, float]]:
     signal_power = np.sum(wet[:, warm_up:] ** 2, axis=1)
     residue_power = np.sum(residue**2, axis=1)
     depths = 10 * np.log10(signal_power / residue_power)
-    return [(drive, bright, depth) for (drive, bright), depth in zip(dataset.conditions, depths)]
+    return [(drive, tone, depth) for (drive, tone), depth in zip(dataset.conditions, depths)]
 
 
 def main() -> None:
     """Prints the null depth table for one pedal."""
     arguments = parse_arguments()
-    print(f"{'drive':>6} {'bright':>7} {'null (dB)':>10}")
-    for drive, bright, depth in null_depths(arguments.pedal):
-        print(f"{drive:>6.2f} {bright:>7.0f} {depth:>10.1f}")
+    print(f"{'drive':>6} {'tone':>6} {'null (dB)':>10}")
+    for drive, tone, depth in null_depths(arguments.pedal):
+        print(f"{drive:>6.2f} {tone:>6.2f} {depth:>10.1f}")
 
 
 if __name__ == "__main__":
