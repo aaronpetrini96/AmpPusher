@@ -25,12 +25,16 @@ add_test(NAME sd1_parity COMMAND parity_test sd1)
 juce_add_plugin(AmpPusher
     COMPANY_NAME "Aaron Petrini"
     PLUGIN_MANUFACTURER_CODE Aapt
-    PLUGIN_CODE Ampp
+    PLUGIN_CODE AmpP
     FORMATS AU VST3 Standalone
     COPY_PLUGIN_AFTER_BUILD TRUE
     PRODUCT_NAME "AmpPusher")
 
-juce_add_binary_data(AmpPusherData SOURCES models/ts808.json models/sd1.json)
+file(GLOB_RECURSE AMPPUSHER_RESOURCE_FILES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/Resources/*")
+list(FILTER AMPPUSHER_RESOURCE_FILES EXCLUDE REGEX "/\\.DS_Store$")
+
+juce_add_binary_data(AmpPusherData SOURCES models/ts808.json models/sd1.json ${AMPPUSHER_RESOURCE_FILES})
 
 target_sources(AmpPusher PRIVATE source/PluginProcessor.cpp source/PluginEditor.cpp)
 target_include_directories(AmpPusher PRIVATE libs/RTNeural)
