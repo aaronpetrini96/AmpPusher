@@ -1,4 +1,5 @@
 #include "PluginProcessor.h"
+#include "PluginEditor.h"
 #include <BinaryData.h>
 
 AmpPusherProcessor::AmpPusherProcessor()
@@ -70,6 +71,11 @@ void AmpPusherProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::M
             channelData[n] = pedalOutput;
         }
     }
+}
+
+juce::AudioProcessorEditor* AmpPusherProcessor::createEditor()
+{
+    return new AmpPusherEditor (*this);
 }
 
 void AmpPusherProcessor::getStateInformation (juce::MemoryBlock& destData)

@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_subdirectory(libs/JUCE)
 
-set(RTNEURAL_STL    ON CACHE BOOL "" FORCE) 
+set(RTNEURAL_STL    ON CACHE BOOL "" FORCE)
 set(BUILD_TESTS     OFF CACHE BOOL "" FORCE)
 set(BUILD_EXAMPLES     OFF CACHE BOOL "" FORCE)
 set(BUILD_BENCH     OFF CACHE BOOL "" FORCE)
@@ -32,7 +32,7 @@ juce_add_plugin(AmpPusher
 
 juce_add_binary_data(AmpPusherData SOURCES models/ts808.json models/sd1.json)
 
-target_sources(AmpPusher PRIVATE source/PluginProcessor.cpp)
+target_sources(AmpPusher PRIVATE source/PluginProcessor.cpp source/PluginEditor.cpp)
 target_include_directories(AmpPusher PRIVATE libs/RTNeural)
 target_compile_definitions(AmpPusher PUBLIC JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0 JUCE_VST3_CAN_REPLACE_VST2=0)
 target_link_libraries(AmpPusher

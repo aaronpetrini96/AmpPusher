@@ -13,7 +13,7 @@ public:
     void releaseResources() override {}
     void processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) override;
 
-    juce::AudioProcessorEditor* createEditor() override { return new juce::GenericAudioProcessorEditor (*this); }
+    juce::AudioProcessorEditor* createEditor() override;
     bool hasEditor() const override { return true; }
 
     const juce::String getName() const override { return "AmpPusher"; }
