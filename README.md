@@ -11,10 +11,15 @@ It runs in real time through [RTNeural](https://github.com/jatinchowdhury18/RTNe
 - Output level is a measured gain curve in C++, not learned.
 - A C++ test checks that the plugin matches the PyTorch model for both pedals.
 
+## Results
+
+Null depth against the source emulation on held-out audio, across all 25 Drive × Tone settings (higher is better):
+
+| Unit | Null depth |
+|---|---|
+| Green | 23.8 – 27.8 dB |
+| Yellow | 26.7 – 30.9 dB |
+
 ## Tech
 
 C++20, JUCE, RTNeural, CMake, Python (PyTorch).
-
-## Status
-
-Basic generic UI for now.
