@@ -22,6 +22,7 @@ void AmpPusherProcessor::prepareToPlay (double sampleRate, int)
 
     switchCrossfade.reset (sampleRate, 0.02);
     switchCrossfade.setCurrentAndTargetValue (1.0f);
+    smoothedEffectMix.reset (sampleRate, 0.02);
 
     constexpr double smoothingTime = 0.05;
     for (auto* smoother : {&smoothedDrive, &smoothedTone, &smoothedGain808, &smoothedGainS1D})
@@ -60,15 +61,17 @@ void AmpPusherProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::M
         const float activeGain = odModeIndex == 0 ? gain808 : gainS1D;
         const float previousGain = odModeIndex == 0 ? gainS1D : gain808;
         const float switchCrossfadeValue = switchCrossfade.getNextValue();
+        const float effectMix = smoothedEffectMix.getNextValue();
 
         for (int ch = 0; ch < numChannels; ++ch)
         {
             auto* channelData = buffer.getWritePointer(ch);
-            const float modelInput[3] {channelData[n], drive, tone};
+            const float drySample = channelData[n];
+            const float modelInput[3] {drySample, drive, tone};
             float pedalOutput = activeModels[static_cast<size_t>(ch)].forward(modelInput) * activeGain;
             if (switchCrossfadeValue < 1.0f)
                 pedalOutput = pedalOutput * switchCrossfadeValue + previousModels[static_cast<size_t>(ch)].forward(modelInput) * previousGain * (1.0f - switchCrossfadeValue);
-            channelData[n] = pedalOutput;
+            channelData[n] = pedalOutput * effectMix + drySample * (1.0f - effectMix);
         }
     }
 }
@@ -115,6 +118,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout AmpPusherProcessor::createPa
     layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID (names.id, versionHint), names.name, 0.0f, 10.0f, 5.0f));
     names = ParamNames::getODModeNames();
     layout.add (std::make_unique<juce::AudioParameterChoice> (juce::ParameterID (names.id, versionHint), names.name, juce::StringArray { "Green 808", "Yellow S1D" }, 0));
+    names = ParamNames::getBypassNames();
+    layout.add (std::make_unique<juce::AudioParameterBool> (juce::ParameterID (names.id, versionHint), names.name, false));
     return layout;
 }
 
@@ -124,6 +129,7 @@ void AmpPusherProcessor::linkParameters()
     toneParam = getParam<juce::AudioParameterFloat> (ParamNames::getToneNames().id);
     levelParam = getParam<juce::AudioParameterFloat> (ParamNames::getLevelNames().id);
     odModeParam = getParam<juce::AudioParameterChoice> (ParamNames::getODModeNames().id);
+    bypassParam = getParam<juce::AudioParameterBool> (ParamNames::getBypassNames().id);
 }
 
 void AmpPusherProcessor::updateSmoothersFromParams (SmootherUpdateMode mode)
@@ -141,6 +147,7 @@ void AmpPusherProcessor::updateSmoothersFromParams (SmootherUpdateMode mode)
     update (smoothedTone, toneParam->get());
     update (smoothedGain808, levelToGain (level, 0));
     update (smoothedGainS1D, levelToGain (level, 1));
+    update (smoothedEffectMix, bypassParam->get() ? 0.0f : 1.0f);
 }
 
 void AmpPusherProcessor::loadModels (std::array<PedalModel, 2>& models, const char* jsonData, int jsonSize)

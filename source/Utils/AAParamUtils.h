@@ -13,4 +13,5 @@ namespace ParamNames
     inline ParamName getToneNames() { return {"Tone", "Tone"}; }
     inline ParamName getLevelNames() { return {"Level", "Level"}; }
     inline ParamName getODModeNames() { return {"ODMode", "OD Mode"}; }
+    inline ParamName getBypassNames() { return {"Bypass", "Bypass"}; }
 }

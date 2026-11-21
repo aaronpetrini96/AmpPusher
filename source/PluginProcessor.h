@@ -20,6 +20,7 @@ public:
     bool acceptsMidi() const override { return false; }
     bool producesMidi() const override { return false; }
     double getTailLengthSeconds() const override { return 0.0; }
+    juce::AudioProcessorParameter* getBypassParameter() const override { return bypassParam; }
 
     int getNumPrograms() override { return 1; }
     int getCurrentProgram() override { return 0; }
@@ -47,11 +48,13 @@ private:
     juce::SmoothedValue<float> smoothedGain808 {1.0f};
     juce::SmoothedValue<float> smoothedGainS1D {1.0f};
     juce::SmoothedValue<float> smoothedTone {0.5f};
+    juce::SmoothedValue<float> smoothedEffectMix {1.0f};
 
     juce::AudioParameterFloat* driveParam {nullptr};
     juce::AudioParameterFloat* toneParam {nullptr};
     juce::AudioParameterFloat* levelParam {nullptr};
     juce::AudioParameterChoice* odModeParam {nullptr};
+    juce::AudioParameterBool* bypassParam {nullptr};
 
     static float levelToGain (float level, int odMode);
     static void loadModels (std::array<PedalModel, 2>& models, const char* jsonData, int jsonSize);
