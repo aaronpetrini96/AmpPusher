@@ -28,6 +28,17 @@ namespace AAUITools
         }
     }
 
+    inline void setToggleImageButton (juce::DrawableButton& button, const juce::Drawable& offImage, const juce::Drawable& onImage,
+                                      const juce::Drawable& offPressedImage, const juce::Drawable& onPressedImage)
+    {
+        button.setImages (&offImage, &offImage, &offPressedImage, nullptr, &onImage, &onImage, &onPressedImage);
+        button.setEdgeIndent (0);
+        button.setColour (juce::DrawableButton::backgroundColourId, juce::Colours::transparentBlack);
+        button.setColour (juce::DrawableButton::backgroundOnColourId, juce::Colours::transparentBlack);
+        button.setClickingTogglesState (true);
+        button.setTriggeredOnMouseDown (true);
+    }
+
     inline void drawOutlinedRoundedRectangle (juce::Graphics& g, const juce::Rectangle<float> bounds, const float cornerSize, const float outlineThickness, const juce::FillType& fill, const juce::Colour outlineColour)
     {
         g.setFillType (fill);

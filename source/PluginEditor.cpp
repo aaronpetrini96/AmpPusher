@@ -4,36 +4,25 @@
 AmpPusherEditor::AmpPusherEditor (AmpPusherProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p)
 {
-    for (auto* knob : {&driveKnob, &levelKnob, &toneKnob})
-    {
-        knob->setMouseDragSensitivity(300);
-        addAndMakeVisible(knob);
-    }
-
-    toneKnob.setMouseDragSensitivity(250);
-
     for (auto* label : {&driveLabel, &levelLabel, &toneLabel})
         addAndMakeVisible(label);
-
-    odModeLabelAttachment.sendInitialUpdate();
+    for (auto* knob : {&driveKnob, &levelKnob, &toneKnob})
+    {
+        knob->setMouseDragSensitivity(250);
+        addAndMakeVisible(knob);
+    }
+    // toneKnob.setMouseDragSensitivity(250);
+    odModeLabel.setInterceptsMouseClicks(false, false);
     addAndMakeVisible(odModeLabel);
 
-    odModeSwitch.setImages(false, true, true,
-                           switchDownImage, 1.f, juce::Colours::transparentBlack,
-                           switchDownImage, 1.f, juce::Colours::transparentBlack,
-                           switchUpImage, 1.f, juce::Colours::transparentBlack);
-    odModeSwitch.setClickingTogglesState(true);
+    AAUITools::setToggleImageButton(odModeSwitch, switchUpDrawable, switchUpDrawable, switchDownDrawable, switchDownDrawable);
     addAndMakeVisible(odModeSwitch);
-    addAndMakeVisible(bypassLED);
 
-    juce::DrawableImage footswitchDownDrawable {footswitchDownImage};
-    juce::DrawableImage footswitchUpDrawable {footswitchUpImage};
-    bypassFootswitch.setImages(&footswitchDownDrawable, &footswitchDownDrawable, &footswitchUpDrawable, nullptr,
-                               &footswitchUpDrawable, &footswitchUpDrawable, &footswitchDownDrawable);
-    bypassFootswitch.setColour(juce::DrawableButton::backgroundColourId, juce::Colours::transparentBlack);
-    bypassFootswitch.setColour(juce::DrawableButton::backgroundOnColourId, juce::Colours::transparentBlack);
-    bypassFootswitch.setClickingTogglesState(true);
-    bypassFootswitch.setTriggeredOnMouseDown(true);
+    odModeSwitch.onClick = [this] { updateOdModeLabel(); };
+    updateOdModeLabel();
+
+    addAndMakeVisible(bypassLED);
+    AAUITools::setToggleImageButton(bypassFootswitch, footswitchDownDrawable, footswitchUpDrawable, footswitchUpDrawable, footswitchDownDrawable);
     addAndMakeVisible(bypassFootswitch);
 
     setResizable(true, true);
@@ -59,18 +48,17 @@ void AmpPusherEditor::resized()
     const auto boundsFWidth = boundsF.getWidth();
     const auto boundsFHeight = boundsF.getHeight();
 
-    const auto bigKnobSize = boundsFWidth * 0.4f;
-    const auto bigKnobBounds = boundsF.withSize(bigKnobSize, bigKnobSize).withCentre({boundsF.getCentreX(), boundsFHeight * 0.2f});
-    const auto knobXGap = boundsFWidth * 0.225f;
-    driveKnob.setBounds(bigKnobBounds.translated(-knobXGap, 0.f).toNearestInt());
-    levelKnob.setBounds(bigKnobBounds.translated(knobXGap, 0.f).toNearestInt());
+    const auto bigKnobSize = boundsFWidth * 0.35f;
+    const auto bigKnobBounds = boundsF.withSize(bigKnobSize, bigKnobSize).withCentre({boundsF.getCentreX(), boundsFHeight * 0.15f});
+    driveKnob.setBounds(bigKnobBounds.withX(boundsFWidth * 0.25f - bigKnobSize * 0.5f).toNearestInt());
+    levelKnob.setBounds(bigKnobBounds.withX(boundsFWidth * 0.75f - bigKnobSize  * 0.5f).toNearestInt());
 
-    const auto smallKnobSize = boundsFWidth * 0.185f;
-    const auto smallKnobBounds = boundsF.withSizeKeepingCentre(smallKnobSize, smallKnobSize).withY(bigKnobBounds.getCentreY() + bigKnobSize * 0.55f);
+    const auto smallKnobSize = boundsFWidth * 0.215f;
+    const auto smallKnobBounds = boundsF.withSizeKeepingCentre(smallKnobSize, smallKnobSize).withY(bigKnobBounds.getCentreY() + bigKnobSize * 0.5f);
     toneKnob.setBounds(smallKnobBounds.toNearestInt());
 
-    const auto labelHeight = boundsFHeight * 0.05f;
-    const auto labelFont = APFonts::arimoBold(labelHeight * 0.725f);
+    const auto labelHeight = boundsFHeight * 0.0537f;
+    const auto labelFont = APFonts::arimoBold(labelHeight * 0.7f);
     const auto placeBelow = [&](AAUITools::PrintedText& label, const juce::Component& knob)
     {
         const auto knobBounds = knob.getBounds().toFloat();
@@ -82,20 +70,21 @@ void AmpPusherEditor::resized()
     placeBelow(levelLabel, levelKnob);
     placeBelow(toneLabel, toneKnob);
 
-    const auto tapeTextHeight = boundsFHeight * 0.17f;
-    const juce::Point<float> tapeCentre {boundsFWidth * 0.5f, boundsFHeight * 0.8475f};
-    const auto tapeFont = APFonts::permanentMarker(tapeTextHeight);
-    const auto tapeTextWidth = juce::jmax(juce::GlyphArrangement::getStringWidth(tapeFont, "808"), juce::GlyphArrangement::getStringWidth(tapeFont, "S1D"));
-    odModeLabel.setFont(tapeFont);
-    odModeLabel.setBounds(boundsF.withSize(tapeTextWidth, tapeTextHeight * 1.4f).withCentre(tapeCentre).toNearestInt());
-    odModeLabel.setTransform(juce::AffineTransform::rotation(-0.174f, tapeCentre.x, tapeCentre.y));
+    const juce::Point<float> modeLabelCentre {boundsFWidth * 0.5f, boundsFHeight * 0.873f};
+    const auto modeLabelWidth = boundsFWidth * 0.91f;
+    const auto modeLabelHeight = modeLabelWidth * static_cast<float>(modeLabel808Image.getHeight()) / static_cast<float>(modeLabel808Image.getWidth());
+    odModeLabel.setBounds(boundsF.withSize(modeLabelWidth, modeLabelHeight).withCentre(modeLabelCentre).toNearestInt());
 
-    const auto switchSize = boundsFWidth * 0.225f;
-    odModeSwitch.setBounds(boundsF.withSize(switchSize, switchSize).withCentre({boundsFWidth * 0.15f, boundsFHeight * 0.725f}).toNearestInt());
+    const auto ledSize = boundsFWidth * 0.17f;
+    bypassLED.setBounds(boundsF.withSizeKeepingCentre(ledSize, ledSize).toNearestInt());
+    const auto footswitchSize = boundsFWidth * 0.27f;
+    bypassFootswitch.setBounds(boundsF.withSizeKeepingCentre(footswitchSize, footswitchSize).translated(0, ledSize * 1.25f).toNearestInt());
 
-    const auto ledSize = boundsFWidth * 0.125f;
-    bypassLED.setBounds(boundsF.withSize(ledSize, ledSize).withCentre({boundsF.getCentreX(), boundsFHeight * 0.085f}).toNearestInt());
+    const auto switchSize = boundsFWidth * 0.25f;
+    odModeSwitch.setBounds(boundsF.withSize(switchSize, switchSize).withCentre({boundsFWidth * 0.1f, boundsFHeight * 0.775f}).toNearestInt());
+}
 
-    const auto footswitchSize = boundsFWidth * 0.25f;
-    bypassFootswitch.setBounds(boundsF.withSize(footswitchSize, footswitchSize).withCentre({boundsF.getCentreX(), boundsFHeight * 0.625f}).toNearestInt());
+void AmpPusherEditor::updateOdModeLabel()
+{
+    odModeLabel.setImage(odModeSwitch.getToggleState() ? modeLabelS1DImage : modeLabel808Image);
 }
