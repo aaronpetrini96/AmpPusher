@@ -10,12 +10,11 @@ AmpPusherEditor::AmpPusherEditor (AmpPusherProcessor& p)
         addAndMakeVisible(knob);
     }
 
-    for (auto* label : {&driveLabel, &levelLabel, &toneLabel})
+    for (auto* label : {&driveLabel, &levelLabel, &toneLabel, &modeSwitchLabel})
         addAndMakeVisible(label);
 
-    odModeTapeButton.setLookAndFeel(&tapeButtonLAF);
-//    odModeTapeButton.setClickingTogglesState(true);
-    addAndMakeVisible(odModeTapeButton);
+    odModeLabelAttachment.sendInitialUpdate();
+    addAndMakeVisible(odModeLabel);
 
     odModeSwitch.setImages(false, true, true,
                            switchDownImage, 1.f, juce::Colours::transparentBlack,
@@ -32,6 +31,7 @@ AmpPusherEditor::AmpPusherEditor (AmpPusherProcessor& p)
     bypassFootswitch.setColour(juce::DrawableButton::backgroundColourId, juce::Colours::transparentBlack);
     bypassFootswitch.setColour(juce::DrawableButton::backgroundOnColourId, juce::Colours::transparentBlack);
     bypassFootswitch.setClickingTogglesState(true);
+    bypassFootswitch.setTriggeredOnMouseDown(true);
     addAndMakeVisible(bypassFootswitch);
 
     setResizable(true, true);
@@ -63,12 +63,12 @@ void AmpPusherEditor::resized()
     driveKnob.setBounds(bigKnobBounds.translated(-knobXGap, 0.f).toNearestInt());
     levelKnob.setBounds(bigKnobBounds.translated(knobXGap, 0.f).toNearestInt());
 
-    const auto smallKnobSize = boundsFWidth * 0.2f;
+    const auto smallKnobSize = boundsFWidth * 0.18f;
     const auto smallKnobBounds = boundsF.withSizeKeepingCentre(smallKnobSize, smallKnobSize).withY(bigKnobBounds.getCentreY() + boundsFHeight * 0.11f);
     toneKnob.setBounds(smallKnobBounds.toNearestInt());
 
     const auto labelHeight = boundsFHeight * 0.05f;
-    const auto labelFont = APFonts::arimoBold(labelHeight * 0.7f);
+    const auto labelFont = APFonts::arimoBold(labelHeight * 0.725f);
     const auto placeBelow = [&](AAUITools::PrintedText& label, const juce::Component& knob)
     {
         const auto knobBounds = knob.getBounds().toFloat();
@@ -80,17 +80,22 @@ void AmpPusherEditor::resized()
     placeBelow(levelLabel, levelKnob);
     placeBelow(toneLabel, toneKnob);
 
-    const auto tapeTextHeight = boundsFHeight * 0.175f;
+    const auto tapeTextHeight = boundsFHeight * 0.17f;
     const juce::Point<float> tapeCentre {boundsFWidth * 0.5f, boundsFHeight * 0.8475f};
     const auto tapeFont = APFonts::permanentMarker(tapeTextHeight);
     const auto tapeTextWidth = juce::jmax(juce::GlyphArrangement::getStringWidth(tapeFont, "808"), juce::GlyphArrangement::getStringWidth(tapeFont, "S1D"));
-    odModeTapeButton.setBounds(boundsF.withSize(tapeTextWidth, tapeTextHeight * 1.4f).withCentre(tapeCentre).toNearestInt());
-    odModeTapeButton.setTransform(juce::AffineTransform::rotation(-0.174f, tapeCentre.x, tapeCentre.y));
+    odModeLabel.setFont(tapeFont);
+    odModeLabel.setBounds(boundsF.withSize(tapeTextWidth, tapeTextHeight * 1.4f).withCentre(tapeCentre).toNearestInt());
+    odModeLabel.setTransform(juce::AffineTransform::rotation(-0.174f, tapeCentre.x, tapeCentre.y));
 
-    const auto switchSize = boundsFWidth * 0.2f;
-    float centreX = boundsFWidth * 0.15f;
-    float centreY = boundsFHeight * 0.74f;
+    const auto switchSize = boundsFWidth * 0.25f;
+    const auto centreX = boundsFWidth * 0.15f;
+    const auto centreY = boundsFHeight * 0.75f;
     odModeSwitch.setBounds(boundsF.withSize(switchSize, switchSize).withCentre({centreX, centreY}).toNearestInt());
+
+    const auto modeLabelWidth = boundsFWidth * 0.25f;
+    modeSwitchLabel.setFont(labelFont);
+    modeSwitchLabel.setBounds(juce::Rectangle<float>(centreX + switchSize * 0.5f, centreY - labelHeight * 0.5f, modeLabelWidth, labelHeight).toNearestInt());
 
     const auto ledSize = boundsFWidth * 0.125f;
     bypassLED.setBounds(boundsF.withSize(ledSize, ledSize).withCentre({boundsF.getCentreX(), boundsFHeight * 0.085f}).toNearestInt());

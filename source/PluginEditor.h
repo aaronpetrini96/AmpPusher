@@ -5,7 +5,6 @@
 #include "UI/Components/RotaryImageKnob.h"
 #include "UI/Components/BypassLED.h"
 #include "Utils/AAUITools.h"
-#include "UI/LAF/TapeButtonLAF.h"
 
 class AmpPusherEditor : public juce::AudioProcessorEditor
 {
@@ -37,10 +36,11 @@ private:
     AAUITools::PrintedText driveLabel {"DRIVE", APColors::labelInk};
     AAUITools::PrintedText levelLabel {"LEVEL", APColors::labelInk};
     AAUITools::PrintedText toneLabel {"TONE", APColors::labelInk};
+    AAUITools::PrintedText modeSwitchLabel {"MODE", APColors::labelInk, juce::Justification::centredLeft};
 
-    TapeButtonLAF tapeButtonLAF;
-    juce::TextButton odModeTapeButton;
-    juce::AudioProcessorValueTreeState::ButtonAttachment odModeTapeButtonAttachment {audioProcessor.parameters, ParamNames::getODModeNames().id, odModeTapeButton};
+    AAUITools::PrintedText odModeLabel {"808", APColors::markerInk};
+    juce::ParameterAttachment odModeLabelAttachment {*audioProcessor.parameters.getParameter(ParamNames::getODModeNames().id),
+                                                     [this](float modeIndex) { odModeLabel.setText(modeIndex >= 0.5f ? "S1D" : "808"); }};
 
     juce::ImageButton odModeSwitch;
     juce::AudioProcessorValueTreeState::ButtonAttachment odModeSwitchAttachment {audioProcessor.parameters, ParamNames::getODModeNames().id, odModeSwitch};
