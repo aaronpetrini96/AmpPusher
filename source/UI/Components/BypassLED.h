@@ -42,11 +42,6 @@ public:
         g.fillEllipse (ledBounds.withSizeKeepingCentre (ledDiameter * 0.15f, ledDiameter * 0.12f).translated (0.f, -ledDiameter * 0.22f));
     }
 
-    void mouseDown (const juce::MouseEvent&) override
-    {
-        bypassAttachment.setValueAsCompleteGesture (isOn ? 1.f : 0.f);
-    }
-
 private:
     juce::ParameterAttachment bypassAttachment;
     juce::ParameterAttachment odModeAttachment;
