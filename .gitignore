@@ -18,5 +18,6 @@ __pycache__/
 # builds
 build/
 cmake-build-*/
+build-ninja-*/
 .idea/
 .vscode/
