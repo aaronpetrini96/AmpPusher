@@ -10,7 +10,7 @@ AmpPusherEditor::AmpPusherEditor (AmpPusherProcessor& p)
         addAndMakeVisible(knob);
     }
 
-    for (auto* label : {&driveLabel, &levelLabel, &toneLabel, &modeSwitchLabel})
+    for (auto* label : {&driveLabel, &levelLabel, &toneLabel})
         addAndMakeVisible(label);
 
     odModeLabelAttachment.sendInitialUpdate();
@@ -24,10 +24,10 @@ AmpPusherEditor::AmpPusherEditor (AmpPusherProcessor& p)
     addAndMakeVisible(odModeSwitch);
     addAndMakeVisible(bypassLED);
 
-    juce::DrawableImage footswitchPressedDrawable {footswitchPressed};
-    juce::DrawableImage footswitchUnpressedDrawable {footswitchUnpressed};
-    bypassFootswitch.setImages(&footswitchPressedDrawable, &footswitchPressedDrawable, &footswitchUnpressedDrawable, nullptr,
-                               &footswitchUnpressedDrawable, &footswitchUnpressedDrawable, &footswitchPressedDrawable);
+    juce::DrawableImage footswitchDownDrawable {footswitchDownImage};
+    juce::DrawableImage footswitchUpDrawable {footswitchUpImage};
+    bypassFootswitch.setImages(&footswitchDownDrawable, &footswitchDownDrawable, &footswitchUpDrawable, nullptr,
+                               &footswitchUpDrawable, &footswitchUpDrawable, &footswitchDownDrawable);
     bypassFootswitch.setColour(juce::DrawableButton::backgroundColourId, juce::Colours::transparentBlack);
     bypassFootswitch.setColour(juce::DrawableButton::backgroundOnColourId, juce::Colours::transparentBlack);
     bypassFootswitch.setClickingTogglesState(true);
@@ -88,14 +88,11 @@ void AmpPusherEditor::resized()
     odModeLabel.setBounds(boundsF.withSize(tapeTextWidth, tapeTextHeight * 1.4f).withCentre(tapeCentre).toNearestInt());
     odModeLabel.setTransform(juce::AffineTransform::rotation(-0.174f, tapeCentre.x, tapeCentre.y));
 
-    const auto switchSize = boundsFWidth * 0.25f;
+    const auto switchSize = boundsFWidth * 0.225f;
     const auto centreX = boundsFWidth * 0.15f;
-    const auto centreY = boundsFHeight * 0.75f;
-    odModeSwitch.setBounds(boundsF.withSize(switchSize, switchSize).withCentre({centreX, centreY}).toNearestInt());
-
-    const auto modeLabelWidth = boundsFWidth * 0.25f;
-    modeSwitchLabel.setFont(labelFont);
-    modeSwitchLabel.setBounds(juce::Rectangle<float>(centreX + switchSize * 0.5f, centreY - labelHeight * 0.5f, modeLabelWidth, labelHeight).toNearestInt());
+    const auto centreY = boundsFHeight * 0.725f;
+    const auto modeSwitchBounds = boundsF.withSize(switchSize, switchSize).withCentre({centreX, centreY});
+    odModeSwitch.setBounds(modeSwitchBounds.toNearestInt());
 
     const auto ledSize = boundsFWidth * 0.125f;
     bypassLED.setBounds(boundsF.withSize(ledSize, ledSize).withCentre({boundsF.getCentreX(), boundsFHeight * 0.085f}).toNearestInt());

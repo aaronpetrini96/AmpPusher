@@ -27,8 +27,8 @@ private:
     juce::Image smallKnobRotorImage {juce::ImageCache::getFromMemory(BinaryData::smallKnobRotor_png, BinaryData::smallKnobRotor_pngSize)};
     juce::Image switchUpImage {juce::ImageCache::getFromMemory(BinaryData::switchUP_png, BinaryData::switchUP_pngSize)};
     juce::Image switchDownImage {juce::ImageCache::getFromMemory(BinaryData::switchDOWN_png, BinaryData::switchDOWN_pngSize)};
-    juce::Image footswitchPressed {juce::ImageCache::getFromMemory(BinaryData::sw4_down_png, BinaryData::sw4_down_pngSize)};
-    juce::Image footswitchUnpressed {juce::ImageCache::getFromMemory(BinaryData::sw4_up_png, BinaryData::sw4_up_pngSize)};
+    juce::Image footswitchDownImage {juce::ImageCache::getFromMemory(BinaryData::sw4_down_png, BinaryData::sw4_down_pngSize)};
+    juce::Image footswitchUpImage {juce::ImageCache::getFromMemory(BinaryData::sw4_up_png, BinaryData::sw4_up_pngSize)};
     RotaryImageKnob driveKnob {*audioProcessor.parameters.getParameter(ParamNames::getDriveNames().id), bigKnobBaseImage, bigKnobRotorImage};
     RotaryImageKnob levelKnob {*audioProcessor.parameters.getParameter(ParamNames::getLevelNames().id), bigKnobBaseImage, bigKnobRotorImage};
     RotaryImageKnob toneKnob {*audioProcessor.parameters.getParameter(ParamNames::getToneNames().id), smallKnobBaseImage, smallKnobRotorImage};
@@ -36,7 +36,6 @@ private:
     AAUITools::PrintedText driveLabel {"DRIVE", APColors::labelInk};
     AAUITools::PrintedText levelLabel {"LEVEL", APColors::labelInk};
     AAUITools::PrintedText toneLabel {"TONE", APColors::labelInk};
-    AAUITools::PrintedText modeSwitchLabel {"MODE", APColors::labelInk, juce::Justification::centredLeft};
 
     AAUITools::PrintedText odModeLabel {"808", APColors::markerInk};
     juce::ParameterAttachment odModeLabelAttachment {*audioProcessor.parameters.getParameter(ParamNames::getODModeNames().id),
