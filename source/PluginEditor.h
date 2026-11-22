@@ -2,10 +2,10 @@
 
 #include "PluginProcessor.h"
 #include "APLook.h"
-#include "RotaryImageKnob.h"
-#include "BypassLED.h"
+#include "UI/Components/RotaryImageKnob.h"
+#include "UI/Components/BypassLED.h"
 #include "Utils/AAUITools.h"
-#include "TapeButtonLAF.h"
+#include "UI/LAF/TapeButtonLAF.h"
 
 class AmpPusherEditor : public juce::AudioProcessorEditor
 {
@@ -21,13 +21,15 @@ private:
     const int uiWidth {340};
     const int uiHeight {600};
 
-    juce::Image pedalBoxImage {juce::ImageCache::getFromMemory(BinaryData::pedalBoxWithTape_png, BinaryData::pedalBoxWithTape_pngSize)};
+    juce::Image pedalBoxImage {juce::ImageCache::getFromMemory(BinaryData::pedalBoxWithTape2_png, BinaryData::pedalBoxWithTape2_pngSize)};
     juce::Image bigKnobBaseImage {juce::ImageCache::getFromMemory(BinaryData::bigKnobBase_png, BinaryData::bigKnobBase_pngSize)};
     juce::Image bigKnobRotorImage {juce::ImageCache::getFromMemory(BinaryData::bigKnobRotator_png, BinaryData::bigKnobRotator_pngSize)};
     juce::Image smallKnobBaseImage {juce::ImageCache::getFromMemory(BinaryData::smallKnobBase_png, BinaryData::smallKnobBase_pngSize)};
     juce::Image smallKnobRotorImage {juce::ImageCache::getFromMemory(BinaryData::smallKnobRotor_png, BinaryData::smallKnobRotor_pngSize)};
     juce::Image switchUpImage {juce::ImageCache::getFromMemory(BinaryData::switchUP_png, BinaryData::switchUP_pngSize)};
     juce::Image switchDownImage {juce::ImageCache::getFromMemory(BinaryData::switchDOWN_png, BinaryData::switchDOWN_pngSize)};
+    juce::Image footswitchPressed {juce::ImageCache::getFromMemory(BinaryData::sw4_down_png, BinaryData::sw4_down_pngSize)};
+    juce::Image footswitchUnpressed {juce::ImageCache::getFromMemory(BinaryData::sw4_up_png, BinaryData::sw4_up_pngSize)};
     RotaryImageKnob driveKnob {*audioProcessor.parameters.getParameter(ParamNames::getDriveNames().id), bigKnobBaseImage, bigKnobRotorImage};
     RotaryImageKnob levelKnob {*audioProcessor.parameters.getParameter(ParamNames::getLevelNames().id), bigKnobBaseImage, bigKnobRotorImage};
     RotaryImageKnob toneKnob {*audioProcessor.parameters.getParameter(ParamNames::getToneNames().id), smallKnobBaseImage, smallKnobRotorImage};
@@ -44,6 +46,9 @@ private:
     juce::AudioProcessorValueTreeState::ButtonAttachment odModeSwitchAttachment {audioProcessor.parameters, ParamNames::getODModeNames().id, odModeSwitch};
 
     BypassLED bypassLED {*audioProcessor.parameters.getParameter(ParamNames::getBypassNames().id), *audioProcessor.parameters.getParameter(ParamNames::getODModeNames().id)};
+
+    juce::DrawableButton bypassFootswitch {"bypassButton", juce::DrawableButton::ImageFitted};
+    juce::AudioProcessorValueTreeState::ButtonAttachment bypassFootswitchAttachment {audioProcessor.parameters, ParamNames::getBypassNames().id, bypassFootswitch};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AmpPusherEditor)
 };

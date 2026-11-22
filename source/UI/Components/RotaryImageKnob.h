@@ -34,7 +34,6 @@ public:
 
         g.setImageResamplingQuality(juce::Graphics::highResamplingQuality);
         const auto hasRotor = rotorImage.isValid();
-
         if (hasRotor)
             g.drawImage(knobImage, knobBounds, juce::RectanglePlacement::centred);
 

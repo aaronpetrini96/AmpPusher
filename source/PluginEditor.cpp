@@ -25,6 +25,15 @@ AmpPusherEditor::AmpPusherEditor (AmpPusherProcessor& p)
     addAndMakeVisible(odModeSwitch);
     addAndMakeVisible(bypassLED);
 
+    juce::DrawableImage footswitchPressedDrawable {footswitchPressed};
+    juce::DrawableImage footswitchUnpressedDrawable {footswitchUnpressed};
+    bypassFootswitch.setImages(&footswitchPressedDrawable, &footswitchPressedDrawable, &footswitchUnpressedDrawable, nullptr,
+                               &footswitchUnpressedDrawable, &footswitchUnpressedDrawable, &footswitchPressedDrawable);
+    bypassFootswitch.setColour(juce::DrawableButton::backgroundColourId, juce::Colours::transparentBlack);
+    bypassFootswitch.setColour(juce::DrawableButton::backgroundOnColourId, juce::Colours::transparentBlack);
+    bypassFootswitch.setClickingTogglesState(true);
+    addAndMakeVisible(bypassFootswitch);
+
     setResizable(true, true);
     setResizeLimits(uiWidth * 3/4, uiHeight * 3/4, uiWidth * 3/2, uiHeight * 3/2);
     getConstrainer()->setFixedAspectRatio(static_cast<double>(uiWidth)/ static_cast<double>(uiHeight));
@@ -40,7 +49,6 @@ void AmpPusherEditor::paint (juce::Graphics& g)
     const auto boundsF = getLocalBounds().toFloat();
     g.fillAll (juce::Colours::black);
     g.drawImage (pedalBoxImage, boundsF, juce::RectanglePlacement::fillDestination);
-    g.fillAll(juce::Colours::black.withAlpha(0.35f));
 }
 
 void AmpPusherEditor::resized()
@@ -50,12 +58,12 @@ void AmpPusherEditor::resized()
     const auto boundsFHeight = boundsF.getHeight();
 
     const auto bigKnobSize = boundsFWidth * 0.4f;
-    const auto bigKnobBounds = boundsF.withSize(bigKnobSize, bigKnobSize).withCentre({boundsF.getCentreX(), boundsFHeight * 0.175f});
+    const auto bigKnobBounds = boundsF.withSize(bigKnobSize, bigKnobSize).withCentre({boundsF.getCentreX(), boundsFHeight * 0.2f});
     const auto knobXGap = boundsFWidth * 0.225f;
     driveKnob.setBounds(bigKnobBounds.translated(-knobXGap, 0.f).toNearestInt());
     levelKnob.setBounds(bigKnobBounds.translated(knobXGap, 0.f).toNearestInt());
 
-    const auto smallKnobSize = boundsFWidth * 0.175f;
+    const auto smallKnobSize = boundsFWidth * 0.2f;
     const auto smallKnobBounds = boundsF.withSizeKeepingCentre(smallKnobSize, smallKnobSize).withY(bigKnobBounds.getCentreY() + boundsFHeight * 0.11f);
     toneKnob.setBounds(smallKnobBounds.toNearestInt());
 
@@ -84,6 +92,9 @@ void AmpPusherEditor::resized()
     float centreY = boundsFHeight * 0.74f;
     odModeSwitch.setBounds(boundsF.withSize(switchSize, switchSize).withCentre({centreX, centreY}).toNearestInt());
 
-    const auto ledSize = boundsFWidth * 0.1f;
+    const auto ledSize = boundsFWidth * 0.125f;
     bypassLED.setBounds(boundsF.withSize(ledSize, ledSize).withCentre({boundsF.getCentreX(), boundsFHeight * 0.085f}).toNearestInt());
+
+    const auto footswitchSize = boundsFWidth * 0.25f;
+    bypassFootswitch.setBounds(boundsF.withSize(footswitchSize, footswitchSize).withCentre({boundsF.getCentreX(), boundsFHeight * 0.625f}).toNearestInt());
 }
