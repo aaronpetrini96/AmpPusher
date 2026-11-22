@@ -21,10 +21,10 @@ private:
     const int uiHeight {600};
 
     juce::Image pedalBoxImage {juce::ImageCache::getFromMemory(BinaryData::pedalBoxWithTape2_png, BinaryData::pedalBoxWithTape2_pngSize)};
-    juce::Image bigKnobBaseImage {juce::ImageCache::getFromMemory(BinaryData::bigKnobBase_png, BinaryData::bigKnobBase_pngSize)};
-    juce::Image bigKnobRotorImage {juce::ImageCache::getFromMemory(BinaryData::bigKnobRotator_png, BinaryData::bigKnobRotator_pngSize)};
+    juce::Image bigKnobBaseImage {juce::ImageCache::getFromMemory(BinaryData::bigKnobBase2_png, BinaryData::bigKnobBase2_pngSize)};
+    juce::Image bigKnobRotorImage {juce::ImageCache::getFromMemory(BinaryData::bigKnobRotator2_png, BinaryData::bigKnobRotator2_pngSize)};
     juce::Image smallKnobBaseImage {juce::ImageCache::getFromMemory(BinaryData::smallKnobBase_png, BinaryData::smallKnobBase_pngSize)};
-    juce::Image smallKnobRotorImage {juce::ImageCache::getFromMemory(BinaryData::smallKnobRotor_png, BinaryData::smallKnobRotor_pngSize)};
+    juce::Image smallKnobRotorImage {juce::ImageCache::getFromMemory(BinaryData::smallKnobRotor2_png, BinaryData::smallKnobRotor2_pngSize)};
     juce::Image switchUpImage {juce::ImageCache::getFromMemory(BinaryData::switchUP_png, BinaryData::switchUP_pngSize)};
     juce::Image switchDownImage {juce::ImageCache::getFromMemory(BinaryData::switchDOWN_png, BinaryData::switchDOWN_pngSize)};
     juce::Image footswitchDownImage {juce::ImageCache::getFromMemory(BinaryData::sw4_down_png, BinaryData::sw4_down_pngSize)};

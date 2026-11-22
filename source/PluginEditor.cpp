@@ -10,6 +10,8 @@ AmpPusherEditor::AmpPusherEditor (AmpPusherProcessor& p)
         addAndMakeVisible(knob);
     }
 
+    toneKnob.setMouseDragSensitivity(250);
+
     for (auto* label : {&driveLabel, &levelLabel, &toneLabel})
         addAndMakeVisible(label);
 
@@ -63,8 +65,8 @@ void AmpPusherEditor::resized()
     driveKnob.setBounds(bigKnobBounds.translated(-knobXGap, 0.f).toNearestInt());
     levelKnob.setBounds(bigKnobBounds.translated(knobXGap, 0.f).toNearestInt());
 
-    const auto smallKnobSize = boundsFWidth * 0.18f;
-    const auto smallKnobBounds = boundsF.withSizeKeepingCentre(smallKnobSize, smallKnobSize).withY(bigKnobBounds.getCentreY() + boundsFHeight * 0.11f);
+    const auto smallKnobSize = boundsFWidth * 0.185f;
+    const auto smallKnobBounds = boundsF.withSizeKeepingCentre(smallKnobSize, smallKnobSize).withY(bigKnobBounds.getCentreY() + bigKnobSize * 0.55f);
     toneKnob.setBounds(smallKnobBounds.toNearestInt());
 
     const auto labelHeight = boundsFHeight * 0.05f;
@@ -89,10 +91,7 @@ void AmpPusherEditor::resized()
     odModeLabel.setTransform(juce::AffineTransform::rotation(-0.174f, tapeCentre.x, tapeCentre.y));
 
     const auto switchSize = boundsFWidth * 0.225f;
-    const auto centreX = boundsFWidth * 0.15f;
-    const auto centreY = boundsFHeight * 0.725f;
-    const auto modeSwitchBounds = boundsF.withSize(switchSize, switchSize).withCentre({centreX, centreY});
-    odModeSwitch.setBounds(modeSwitchBounds.toNearestInt());
+    odModeSwitch.setBounds(boundsF.withSize(switchSize, switchSize).withCentre({boundsFWidth * 0.15f, boundsFHeight * 0.725f}).toNearestInt());
 
     const auto ledSize = boundsFWidth * 0.125f;
     bypassLED.setBounds(boundsF.withSize(ledSize, ledSize).withCentre({boundsF.getCentreX(), boundsFHeight * 0.085f}).toNearestInt());
