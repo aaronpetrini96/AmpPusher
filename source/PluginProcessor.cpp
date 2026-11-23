@@ -135,11 +135,12 @@ void AmpPusherProcessor::processModels (juce::AudioBuffer<float>& buffer, int nu
 
     if (activeODMode != odModeIndex)
     {
-        for (auto& model : activeModels)
-            model.reset();
+        if (! switchCrossfade.isSmoothing())
+            for (auto& model : activeModels)
+                model.reset();
         activeODMode = odModeIndex;
 
-        switchCrossfade.setCurrentAndTargetValue(0.0f);
+        switchCrossfade.setCurrentAndTargetValue(1.0f - switchCrossfade.getCurrentValue());
         switchCrossfade.setTargetValue(1.0f);
     }
 
