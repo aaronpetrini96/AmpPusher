@@ -4,6 +4,7 @@
 #include <RTNeural/RTNeural.h>
 #include "Utils/AAParamUtils.h"
 #include "DSP/FixedRateResampler.h"
+#include "Utils/AASmoothedBypassed.h"
 
 class AmpPusherProcessor : public juce::AudioProcessor
 {
@@ -37,9 +38,9 @@ public:
     juce::AudioProcessorValueTreeState parameters {*this, nullptr, "Parameters", createParameterLayout()};
 
 private:
-    using PedalModel = RTNeural::ModelT<float, 3, 1,
-                                        RTNeural::GRULayerT<float, 3, 32>,
-                                        RTNeural::DenseT<float, 32, 1>>;
+    using PedalModel = RTNeural::ModelT<float, 3, 1, RTNeural::GRULayerT<float, 3, 32>, RTNeural::DenseT<float, 32, 1>>;
+
+
 
     std::array<PedalModel, 2> models808;
     std::array<PedalModel, 2> modelsS1D;
@@ -47,12 +48,12 @@ private:
     juce::SmoothedValue<float> switchCrossfade {1.0f};
     static constexpr double modelSampleRate {48000.0};
     FixedRateResampler resampler;
+    AASmoothedBypassed smoothedBypass;
 
     juce::SmoothedValue<float> smoothedDrive {0.0f};
     juce::SmoothedValue<float> smoothedGain808 {1.0f};
     juce::SmoothedValue<float> smoothedGainS1D {1.0f};
     juce::SmoothedValue<float> smoothedTone {0.5f};
-    juce::SmoothedValue<float> smoothedEffectMix {1.0f};
 
     juce::AudioParameterFloat* driveParam {nullptr};
     juce::AudioParameterFloat* toneParam {nullptr};

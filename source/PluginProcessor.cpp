@@ -20,7 +20,9 @@ void AmpPusherProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 
     switchCrossfade.reset (processingRate, 0.02);
     resetModels();
-    smoothedEffectMix.reset (processingRate, 0.02);
+    smoothedBypass.setRampSeconds (0.02);
+    smoothedBypass.prepare (sampleRate, samplesPerBlock, getTotalNumOutputChannels(),
+                            bypassParam->get(), getLatencySamples());
 
     constexpr double smoothingTime = 0.05;
     for (auto* smoother : {&smoothedDrive, &smoothedTone, &smoothedGain808, &smoothedGainS1D})
@@ -32,23 +34,33 @@ void AmpPusherProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 void AmpPusherProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
 {
     juce::ScopedNoDenormals noDenormals;
-    updateSmoothersFromParams (SmootherUpdateMode::liveInRealTime);
 
-    if (smoothedEffectMix.getCurrentValue() == 0.0f)
-    {
-        if (smoothedEffectMix.getTargetValue() == 0.0f)
-        {
-            if (resampler.isNeeded())
-                resampler.process (buffer, [] (juce::AudioBuffer<float>&, int) {});
-            return;
-        }
+    const auto wasFullyBypassed = smoothedBypass.isFullyBypassed();
+    smoothedBypass.setBypassed (bypassParam->get());
+
+    if (wasFullyBypassed && ! smoothedBypass.isFullyBypassed())
         resetModels();
-    }
 
-    if (resampler.isNeeded())
-        resampler.process (buffer, [this] (juce::AudioBuffer<float>& modelRateBuffer, int numSamples) { processModels (modelRateBuffer, numSamples); });
-    else
-        processModels (buffer, buffer.getNumSamples());
+    updateSmoothersFromParams (smoothedBypass.isFullyBypassed()
+                                  ? SmootherUpdateMode::initialize
+                                  : SmootherUpdateMode::liveInRealTime);
+
+    smoothedBypass.process (buffer.getArrayOfWritePointers(), buffer.getNumChannels(), buffer.getNumSamples(),
+                           [this] (float* const* channelsData, int numChannels, int numSamples)
+    {
+        juce::AudioBuffer<float> processingBuffer (channelsData, numChannels, numSamples);
+
+        const auto processAtModelRate = [this] (juce::AudioBuffer<float>& modelRateBuffer, int modelSamples)
+        {
+            if (! smoothedBypass.isFullyBypassed())
+                processModels (modelRateBuffer, modelSamples);
+        };
+
+        if (resampler.isNeeded())
+            resampler.process (processingBuffer, processAtModelRate);
+        else
+            processAtModelRate (processingBuffer, numSamples);
+    });
 }
 
 bool AmpPusherProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const
@@ -155,7 +167,6 @@ void AmpPusherProcessor::processModels (juce::AudioBuffer<float>& buffer, int nu
         const float activeGain = odModeIndex == 0 ? gain808 : gainS1D;
         const float previousGain = odModeIndex == 0 ? gainS1D : gain808;
         const float switchCrossfadeValue = switchCrossfade.getNextValue();
-        const float effectMix = smoothedEffectMix.getNextValue();
 
         for (int ch = 0; ch < numChannels; ++ch)
         {
@@ -165,7 +176,7 @@ void AmpPusherProcessor::processModels (juce::AudioBuffer<float>& buffer, int nu
             float pedalOutput = activeModels[static_cast<size_t>(ch)].forward(modelInput) * activeGain;
             if (switchCrossfadeValue < 1.0f)
                 pedalOutput = pedalOutput * switchCrossfadeValue + previousModels[static_cast<size_t>(ch)].forward(modelInput) * previousGain * (1.0f - switchCrossfadeValue);
-            channelData[n] = pedalOutput * effectMix + drySample * (1.0f - effectMix);
+            channelData[n] = pedalOutput;
         }
     }
 }
@@ -185,7 +196,6 @@ void AmpPusherProcessor::updateSmoothersFromParams (SmootherUpdateMode mode)
     update (smoothedTone, toneParam->get());
     update (smoothedGain808, levelToGain (level, 0));
     update (smoothedGainS1D, levelToGain (level, 1));
-    update (smoothedEffectMix, bypassParam->get() ? 0.0f : 1.0f);
 }
 
 void AmpPusherProcessor::loadModels (std::array<PedalModel, 2>& models, const char* jsonData, int jsonSize)
