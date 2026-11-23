@@ -27,8 +27,8 @@ private:
     juce::Image metalKnobRotorImage {juce::ImageCache::getFromMemory(BinaryData::blackMetalKnobRotor_png, BinaryData::blackMetalKnobRotor_pngSize)};
     juce::DrawableImage switchUpDrawable {juce::ImageCache::getFromMemory(BinaryData::switchUP_png, BinaryData::switchUP_pngSize)};
     juce::DrawableImage switchDownDrawable {juce::ImageCache::getFromMemory(BinaryData::switchDOWN_png, BinaryData::switchDOWN_pngSize)};
-    juce::DrawableImage footswitchDownDrawable {juce::ImageCache::getFromMemory(BinaryData::sw4_down_png, BinaryData::sw4_down_pngSize)};
-    juce::DrawableImage footswitchUpDrawable {juce::ImageCache::getFromMemory(BinaryData::sw4_up_png, BinaryData::sw4_up_pngSize)};
+    juce::DrawableImage footswitchDownDrawable {juce::ImageCache::getFromMemory(BinaryData::footswitchDown_png, BinaryData::footswitchDown_pngSize)};
+    juce::DrawableImage footswitchUpDrawable {juce::ImageCache::getFromMemory(BinaryData::footswitchUp_png, BinaryData::footswitchUp_pngSize)};
     juce::Image modeLabel808Image {juce::ImageCache::getFromMemory(BinaryData::modeLabel808_png, BinaryData::modeLabel808_pngSize)};
     juce::Image modeLabelS1DImage {juce::ImageCache::getFromMemory(BinaryData::modeLabelS1D_png, BinaryData::modeLabelS1D_pngSize)};
 
