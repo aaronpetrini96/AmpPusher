@@ -76,6 +76,15 @@ void AmpPusherProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::M
     }
 }
 
+bool AmpPusherProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const
+{
+    const auto mainOutput = layouts.getMainOutputChannelSet();
+    if (mainOutput != juce::AudioChannelSet::mono() && mainOutput != juce::AudioChannelSet::stereo())
+        return false;
+
+    return layouts.getMainInputChannelSet() == mainOutput;
+}
+
 juce::AudioProcessorEditor* AmpPusherProcessor::createEditor()
 {
     return new AmpPusherEditor (*this);
