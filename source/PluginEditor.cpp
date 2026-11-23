@@ -71,12 +71,12 @@ void AmpPusherEditor::resized()
     const auto boundsFHeight = boundsF.getHeight();
 
     const auto bigKnobSize = boundsFWidth * 0.325f;
-    const auto bigKnobBounds = boundsF.withSize(bigKnobSize, bigKnobSize).withCentre({boundsF.getCentreX(), boundsFHeight * 0.15f});
+    const auto bigKnobBounds = boundsF.withSize(bigKnobSize, bigKnobSize).withCentre({boundsF.getCentreX(), boundsFHeight * 0.17f});
     const float delta = boundsFWidth * 0.275f;
     driveKnob.setBounds(bigKnobBounds.translated(-delta, 0.f).toNearestInt());
     levelKnob.setBounds(bigKnobBounds.translated(delta, 0.f).toNearestInt());
 
-    const auto smallKnobSize = bigKnobSize * 0.8f;
+    const auto smallKnobSize = bigKnobSize * 0.75f;
     const auto smallKnobBounds = bigKnobBounds.withSizeKeepingCentre(smallKnobSize, smallKnobSize).translated(0.f, boundsFHeight * 0.15f);
     toneKnob.setBounds(smallKnobBounds.toNearestInt());
 
@@ -102,7 +102,7 @@ void AmpPusherEditor::resized()
     const auto bypassLedBounds = boundsF.withSizeKeepingCentre(ledSize, ledSize);
     // bypassLED.setBounds(bypassLedBounds.toNearestInt());
     const auto footswitchSize = boundsFWidth * 0.275f;
-    const auto footswitchBounds = bypassLedBounds.withSize(footswitchSize, footswitchSize).withCentre({boundsF.getCentreX(), boundsFHeight * 0.6f});
+    const auto footswitchBounds = bypassLedBounds.withSize(footswitchSize, footswitchSize).withCentre({boundsF.getCentreX(), boundsFHeight * 0.625f});
     // const auto footswitchBounds = bypassLedBounds.withSizeKeepingCentre(footswitchSize, footswitchSize).withY(bypassLedBounds.getBottom() + ledSize * 0.4f);
     bypassFootswitch.setBounds(footswitchBounds.toNearestInt());
 
