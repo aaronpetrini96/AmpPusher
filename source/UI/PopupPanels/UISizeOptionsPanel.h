@@ -32,7 +32,7 @@ public:
 
                                   if (onSizeChanged != nullptr)
                                       onSizeChanged();
-                              }, true, isCurrentSize});
+                              }, isCurrentSize});
         }
 
         setItems (sizeOptions);

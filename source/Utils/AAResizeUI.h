@@ -28,9 +28,8 @@ public:
     float getCurrentScale() const { return currentScale; }
     void setCurrentScale (const float newScale) { currentScale = newScale; }
 
-    juce::Rectangle<int> getEditorSize (const juce::Rectangle<int> editorScreenBounds, const float extraHeightRatio) const
+    juce::Rectangle<int> getEditorSize (const juce::Rectangle<int> editorScreenBounds) const
     {
-        const auto defaultEditorHeight = (float) defaultHeight * (1.0f + extraHeightRatio);
         auto effectiveScale = currentScale;
 
         if (const auto* display = juce::Desktop::getInstance().getDisplays().getDisplayForRect (editorScreenBounds))
@@ -38,16 +37,14 @@ public:
             const auto usableBounds = display->userBounds.reduced (display->userBounds.getWidth() * 0.05f,
                                                                     display->userBounds.getHeight() * 0.05f);
             const auto widthScaleLimit = usableBounds.getWidth() / (float) defaultWidth;
-            const auto heightScaleLimit = usableBounds.getHeight() / defaultEditorHeight;
+            const auto heightScaleLimit = usableBounds.getHeight() / (float) defaultHeight;
             effectiveScale = juce::jmin (effectiveScale, widthScaleLimit, heightScaleLimit);
         }
 
-        return {juce::roundToInt ((float) defaultWidth * effectiveScale), juce::roundToInt (defaultEditorHeight * effectiveScale)};
+        return {juce::roundToInt ((float) defaultWidth * effectiveScale), juce::roundToInt ((float) defaultHeight * effectiveScale)};
     }
 
     const juce::Array<SizeOption>& getSizeOptions() const { return sizeOptionsArray; }
-
-    bool isCurrentScaleDefault() const { return juce::approximatelyEqual (currentScale, getDefaultScale()); }
 
     void makeCurrentSizeDefault() const
     {

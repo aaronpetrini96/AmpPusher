@@ -144,7 +144,7 @@ void AmpPusherEditor::updateModeColours()
 
 void AmpPusherEditor::updateEditorSize()
 {
-    const auto editorSize = uiResize.getEditorSize (getScreenBounds(), 0.0f);
+    const auto editorSize = uiResize.getEditorSize (getScreenBounds());
     setSize (editorSize.getWidth(), editorSize.getHeight());
 }
 
