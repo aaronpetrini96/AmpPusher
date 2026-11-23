@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(AmpPusher VERSION 0.1.0 LANGUAGES C CXX)
+project(AmpPusher VERSION 1.0.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -24,6 +24,7 @@ add_test(NAME sd1_parity COMMAND parity_test sd1)
 
 juce_add_plugin(AmpPusher
     COMPANY_NAME "Aaron Petrini"
+    BUNDLE_ID com.apdsp.amppusher
     PLUGIN_MANUFACTURER_CODE Aapt
     PLUGIN_CODE AmpP
     FORMATS AU VST3 Standalone
