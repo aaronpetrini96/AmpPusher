@@ -8,7 +8,7 @@ AmpPusherEditor::AmpPusherEditor (AmpPusherProcessor& p)
         addAndMakeVisible(label);
     for (auto* knob : {&driveKnob, &levelKnob, &toneKnob})
     {
-        knob->setMouseDragSensitivity(200);
+        knob->setMouseDragSensitivity(350);
         addAndMakeVisible(knob);
     }
     toneKnob.setMouseDragSensitivity(250);
@@ -18,17 +18,34 @@ AmpPusherEditor::AmpPusherEditor (AmpPusherProcessor& p)
     AAUITools::setToggleImageButton(odModeSwitch, switchUpDrawable, switchDownDrawable, switchDownDrawable, switchDownDrawable);
     addAndMakeVisible(odModeSwitch);
 
-    odModeSwitch.onClick = [this] { updateOdModeLabel(); };
+    odModeSwitch.onClick = [this]
+    {
+        updateOdModeLabel();
+        updateModeColours();
+    };
     updateOdModeLabel();
 
     addAndMakeVisible(bypassLED);
     AAUITools::setToggleImageButton(bypassFootswitch, footswitchUpDrawable, footswitchUpDrawable, footswitchDownDrawable, footswitchDownDrawable);
     addAndMakeVisible(bypassFootswitch);
 
-    setResizable(true, true);
-    setResizeLimits(uiWidth * 3/4, uiHeight * 3/4, uiWidth * 3/2, uiHeight * 3/2);
-    getConstrainer()->setFixedAspectRatio(static_cast<double>(uiWidth)/ static_cast<double>(uiHeight));
-    setSize (uiWidth, uiHeight);
+    addAndMakeVisible (resizeButton);
+    updateModeColours();
+    resizeButton.setToggleable (true);
+    resizeButton.setClickingTogglesState (false);
+    resizeButton.onClick = [this] { showUISizeOptions(); };
+
+    addChildComponent (resizeOptionsPopup);
+    resizeOptionsPopup.addComponentListener (this);
+    resizeOptionsPopup.onSizeChanged = [this]
+    {
+        updateEditorSize();
+        uiResize.makeCurrentSizeDefault();
+    };
+
+    addMouseListener (this, true);
+    setResizable (false, false);
+    updateEditorSize();
 }
 
 AmpPusherEditor::~AmpPusherEditor()
@@ -84,9 +101,63 @@ void AmpPusherEditor::resized()
 
     const auto switchSize = boundsFWidth * 0.225f;
     odModeSwitch.setBounds(boundsF.withSize(switchSize, switchSize).withCentre({boundsFWidth * 0.1f, boundsFHeight * 0.775f}).toNearestInt());
+
+    const auto resizeButtonSize = boundsFHeight * 0.0375f;
+    const auto resizeButtonGap = resizeButtonSize * 0.5f;
+    const auto resizeButtonBounds = boundsF.withSize (resizeButtonSize, resizeButtonSize).withCentre ({boundsF.getRight() - resizeButtonGap, boundsF.getBottom() - resizeButtonGap});
+    resizeButton.setBounds (resizeButtonBounds.toNearestInt());
+
+    const auto sizeOptionsWidth = boundsFWidth * 0.45f;
+    const auto sizeOptionsHeight = boundsFHeight * 0.04f * resizeOptionsPopup.getNumRows();
+    resizeOptionsPopup.setBounds (juce::Rectangle<float> (sizeOptionsWidth, sizeOptionsHeight).withRightX (resizeButtonBounds.getRight()).withBottomY (resizeButtonBounds.getY()).toNearestInt());
+}
+
+void AmpPusherEditor::mouseUp (const juce::MouseEvent& event)
+{
+    const auto isClickInside = [&event] (const juce::Component& component)
+    {
+        return event.eventComponent == &component || component.isParentOf (event.eventComponent);
+    };
+
+    if (resizeOptionsPopup.isVisible() && ! isClickInside (resizeOptionsPopup) && ! isClickInside (resizeButton))
+        resizeOptionsPopup.setVisible (false);
+}
+
+void AmpPusherEditor::componentVisibilityChanged (juce::Component& component)
+{
+    if (&component == &resizeOptionsPopup)
+        resizeButton.setToggleState (resizeOptionsPopup.isVisible(), juce::dontSendNotification);
 }
 
 void AmpPusherEditor::updateOdModeLabel()
 {
     odModeLabel.setImage(odModeSwitch.getToggleState() ? modeLabelS1DImage : modeLabel808Image);
+}
+
+void AmpPusherEditor::updateModeColours()
+{
+    const auto modeColour = odModeSwitch.getToggleState() ? APColors::ledYellow : APColors::ledGreen;
+    AAUITools::setIconButtonImages (resizeButton, BinaryData::resizeLines_svg, BinaryData::resizeLines_svgSize, APColors::iconSVGColor,
+                                    APColors::iconNormalColor.withAlpha (0.9f), APColors::iconSVGColor, APColors::iconOverColor, modeColour);
+    resizeOptionsPopup.setSelectedTextColour (modeColour);
+}
+
+void AmpPusherEditor::updateEditorSize()
+{
+    const auto editorSize = uiResize.getEditorSize (getScreenBounds(), 0.0f);
+    setSize (editorSize.getWidth(), editorSize.getHeight());
+}
+
+void AmpPusherEditor::showUISizeOptions()
+{
+    if (resizeOptionsPopup.isVisible())
+    {
+        resizeOptionsPopup.setVisible (false);
+        return;
+    }
+
+    resizeOptionsPopup.updateItems();
+    resized();
+    resizeOptionsPopup.toFront (false);
+    resizeOptionsPopup.setVisible (true);
 }

@@ -5,8 +5,11 @@
 #include "UI/Components/RotaryImageKnob.h"
 #include "UI/Components/BypassLED.h"
 #include "Utils/AAUITools.h"
+#include "Utils/AAResizeUI.h"
+#include "UI/PopupPanels/UISizeOptionsPanel.h"
 
-class AmpPusherEditor : public juce::AudioProcessorEditor
+class AmpPusherEditor : public juce::AudioProcessorEditor,
+                        private juce::ComponentListener
 {
 public:
     AmpPusherEditor (AmpPusherProcessor&);
@@ -14,9 +17,14 @@ public:
 
     void paint (juce::Graphics&) override;
     void resized() override;
+    void mouseUp (const juce::MouseEvent& event) override;
+    void componentVisibilityChanged (juce::Component& component) override;
 
 private:
     void updateOdModeLabel();
+    void updateModeColours();
+    void updateEditorSize();
+    void showUISizeOptions();
 
     AmpPusherProcessor& audioProcessor;
     const int uiWidth {340};
@@ -48,6 +56,11 @@ private:
     BypassLED bypassLED {*audioProcessor.parameters.getParameter(ParamNames::getBypassNames().id), *audioProcessor.parameters.getParameter(ParamNames::getODModeNames().id)};
     juce::DrawableButton bypassFootswitch {"bypassButton", juce::DrawableButton::ImageFitted};
     juce::AudioProcessorValueTreeState::ButtonAttachment bypassFootswitchAttachment {audioProcessor.parameters, ParamNames::getBypassNames().id, bypassFootswitch};
+
+    float uiScale {0.0f};
+    AAResizeUI uiResize {uiScale, uiWidth, uiHeight};
+    UISizeOptionsPanel resizeOptionsPopup {uiResize};
+    juce::DrawableButton resizeButton {"GUI Size", juce::DrawableButton::ImageFitted};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AmpPusherEditor)
 };
