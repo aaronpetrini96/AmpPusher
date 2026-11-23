@@ -3,6 +3,7 @@
 #include <juce_audio_utils/juce_audio_utils.h>
 #include <RTNeural/RTNeural.h>
 #include "Utils/AAParamUtils.h"
+#include "DSP/FixedRateResampler.h"
 
 class AmpPusherProcessor : public juce::AudioProcessor
 {
@@ -44,6 +45,8 @@ private:
     std::array<PedalModel, 2> modelsS1D;
     int activeODMode {0};
     juce::SmoothedValue<float> switchCrossfade {1.0f};
+    static constexpr double modelSampleRate {48000.0};
+    FixedRateResampler resampler;
 
     juce::SmoothedValue<float> smoothedDrive {0.0f};
     juce::SmoothedValue<float> smoothedGain808 {1.0f};
@@ -70,6 +73,7 @@ private:
 
     void linkParameters();
     void resetModels();
+    void processModels (juce::AudioBuffer<float>& buffer, int numSamples);
 
     enum class SmootherUpdateMode
     {

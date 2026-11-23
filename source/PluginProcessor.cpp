@@ -12,15 +12,19 @@ AmpPusherProcessor::AmpPusherProcessor()
     loadModels (modelsS1D, BinaryData::sd1_json, BinaryData::sd1_jsonSize);
 }
 
-void AmpPusherProcessor::prepareToPlay (double sampleRate, int)
+void AmpPusherProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    switchCrossfade.reset (sampleRate, 0.02);
+    resampler.prepare (sampleRate, modelSampleRate, samplesPerBlock, getTotalNumOutputChannels());
+    setLatencySamples (resampler.getLatencySamples());
+    const auto processingRate = resampler.isNeeded() ? modelSampleRate : sampleRate;
+
+    switchCrossfade.reset (processingRate, 0.02);
     resetModels();
-    smoothedEffectMix.reset (sampleRate, 0.02);
+    smoothedEffectMix.reset (processingRate, 0.02);
 
     constexpr double smoothingTime = 0.05;
     for (auto* smoother : {&smoothedDrive, &smoothedTone, &smoothedGain808, &smoothedGainS1D})
-        smoother->reset (sampleRate, smoothingTime);
+        smoother->reset (processingRate, smoothingTime);
 
     updateSmoothersFromParams (SmootherUpdateMode::initialize);
 }
@@ -33,48 +37,18 @@ void AmpPusherProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::M
     if (smoothedEffectMix.getCurrentValue() == 0.0f)
     {
         if (smoothedEffectMix.getTargetValue() == 0.0f)
+        {
+            if (resampler.isNeeded())
+                resampler.process (buffer, [] (juce::AudioBuffer<float>&, int) {});
             return;
+        }
         resetModels();
     }
 
-    const auto odModeIndex = odModeParam->getIndex();
-    auto& activeModels = odModeIndex == 0 ? models808 : modelsS1D;
-    auto& previousModels = odModeIndex == 0 ? modelsS1D : models808;
-
-    if (activeODMode != odModeIndex)
-    {
-        for (auto& model : activeModels)
-            model.reset();
-        activeODMode = odModeIndex;
-
-        switchCrossfade.setCurrentAndTargetValue(0.0f);
-        switchCrossfade.setTargetValue(1.0f);
-    }
-
-    const int numChannels = std::min(buffer.getNumChannels(), static_cast<int>(activeModels.size()));
-
-    for (int n = 0; n < buffer.getNumSamples(); ++n)
-    {
-        const float drive = smoothedDrive.getNextValue();
-        const float tone = smoothedTone.getNextValue();
-        const float gain808 = smoothedGain808.getNextValue();
-        const float gainS1D = smoothedGainS1D.getNextValue();
-        const float activeGain = odModeIndex == 0 ? gain808 : gainS1D;
-        const float previousGain = odModeIndex == 0 ? gainS1D : gain808;
-        const float switchCrossfadeValue = switchCrossfade.getNextValue();
-        const float effectMix = smoothedEffectMix.getNextValue();
-
-        for (int ch = 0; ch < numChannels; ++ch)
-        {
-            auto* channelData = buffer.getWritePointer(ch);
-            const float drySample = channelData[n];
-            const float modelInput[3] {drySample, drive, tone};
-            float pedalOutput = activeModels[static_cast<size_t>(ch)].forward(modelInput) * activeGain;
-            if (switchCrossfadeValue < 1.0f)
-                pedalOutput = pedalOutput * switchCrossfadeValue + previousModels[static_cast<size_t>(ch)].forward(modelInput) * previousGain * (1.0f - switchCrossfadeValue);
-            channelData[n] = pedalOutput * effectMix + drySample * (1.0f - effectMix);
-        }
-    }
+    if (resampler.isNeeded())
+        resampler.process (buffer, [this] (juce::AudioBuffer<float>& modelRateBuffer, int numSamples) { processModels (modelRateBuffer, numSamples); });
+    else
+        processModels (buffer, buffer.getNumSamples());
 }
 
 bool AmpPusherProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const
@@ -151,6 +125,48 @@ void AmpPusherProcessor::resetModels()
 
     activeODMode = odModeParam->getIndex();
     switchCrossfade.setCurrentAndTargetValue (1.0f);
+}
+
+void AmpPusherProcessor::processModels (juce::AudioBuffer<float>& buffer, int numSamples)
+{
+    const auto odModeIndex = odModeParam->getIndex();
+    auto& activeModels = odModeIndex == 0 ? models808 : modelsS1D;
+    auto& previousModels = odModeIndex == 0 ? modelsS1D : models808;
+
+    if (activeODMode != odModeIndex)
+    {
+        for (auto& model : activeModels)
+            model.reset();
+        activeODMode = odModeIndex;
+
+        switchCrossfade.setCurrentAndTargetValue(0.0f);
+        switchCrossfade.setTargetValue(1.0f);
+    }
+
+    const int numChannels = std::min(buffer.getNumChannels(), static_cast<int>(activeModels.size()));
+
+    for (int n = 0; n < numSamples; ++n)
+    {
+        const float drive = smoothedDrive.getNextValue();
+        const float tone = smoothedTone.getNextValue();
+        const float gain808 = smoothedGain808.getNextValue();
+        const float gainS1D = smoothedGainS1D.getNextValue();
+        const float activeGain = odModeIndex == 0 ? gain808 : gainS1D;
+        const float previousGain = odModeIndex == 0 ? gainS1D : gain808;
+        const float switchCrossfadeValue = switchCrossfade.getNextValue();
+        const float effectMix = smoothedEffectMix.getNextValue();
+
+        for (int ch = 0; ch < numChannels; ++ch)
+        {
+            auto* channelData = buffer.getWritePointer(ch);
+            const float drySample = channelData[n];
+            const float modelInput[3] {drySample, drive, tone};
+            float pedalOutput = activeModels[static_cast<size_t>(ch)].forward(modelInput) * activeGain;
+            if (switchCrossfadeValue < 1.0f)
+                pedalOutput = pedalOutput * switchCrossfadeValue + previousModels[static_cast<size_t>(ch)].forward(modelInput) * previousGain * (1.0f - switchCrossfadeValue);
+            channelData[n] = pedalOutput * effectMix + drySample * (1.0f - effectMix);
+        }
+    }
 }
 
 void AmpPusherProcessor::updateSmoothersFromParams (SmootherUpdateMode mode)
