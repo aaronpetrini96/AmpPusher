@@ -47,6 +47,7 @@ private:
     AAUITools::PrintedText driveLabel {"DRIVE", APColors::labelInk};
     AAUITools::PrintedText levelLabel {"LEVEL", APColors::labelInk};
     AAUITools::PrintedText toneLabel {"TONE", APColors::labelInk};
+    AAUITools::PrintedText modeLabel {"MODE", APColors::labelInk};
 
     juce::ImageComponent odModeLabel;
 

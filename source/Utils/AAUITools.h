@@ -35,7 +35,7 @@ namespace AAUITools
     class PrintedText : public juce::Component
     {
     public:
-        PrintedText (const juce::String& textToUse, const juce::Colour inkColorToUse = juce::Colours::whitesmoke, const juce::Justification justificationToUse = juce::Justification::centred)
+        PrintedText (const juce::String& textToUse, const juce::Colour inkColorToUse = juce::Colours::whitesmoke, const juce::Justification justificationToUse = juce::Justification::centredTop)
             : text (textToUse), inkColor (inkColorToUse), justification (justificationToUse)
         {
             jassert (grainTile.isValid());

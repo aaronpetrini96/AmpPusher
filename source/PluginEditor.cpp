@@ -4,7 +4,7 @@
 AmpPusherEditor::AmpPusherEditor (AmpPusherProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p)
 {
-    for (auto* label : {&driveLabel, &levelLabel, &toneLabel})
+    for (auto* label : {&driveLabel, &levelLabel, &toneLabel, &modeLabel})
         addAndMakeVisible(label);
     for (auto* knob : {&driveKnob, &levelKnob, &toneKnob})
     {
@@ -69,19 +69,25 @@ void AmpPusherEditor::resized()
     const auto boundsF = getLocalBounds().toFloat();
     const auto boundsFWidth = boundsF.getWidth();
     const auto boundsFHeight = boundsF.getHeight();
+    const auto labelHeight = boundsFHeight * 0.05f;
+    const auto labelFont = APFonts::arimoBold(labelHeight * 0.7f);
 
-    const auto bigKnobSize = boundsFWidth * 0.325f;
-    const auto bigKnobBounds = boundsF.withSize(bigKnobSize, bigKnobSize).withCentre({boundsF.getCentreX(), boundsFHeight * 0.17f});
-    const float delta = boundsFWidth * 0.275f;
+    const auto odModeSwitchSize = boundsFWidth * 0.2f;
+    const auto odModeSwitchBounds = boundsF.withSizeKeepingCentre(odModeSwitchSize, odModeSwitchSize).withY(boundsFHeight * (-0.01f));
+    odModeSwitch.setBounds(odModeSwitchBounds.toNearestInt());
+    modeLabel.setFont(APFonts::arimoBold(labelHeight * 0.575f));
+    modeLabel.setBounds(odModeSwitch.getBounds().toFloat().withSizeKeepingCentre(odModeSwitchSize, labelHeight).translated(0.f, odModeSwitchSize * 0.575f).toNearestInt());
+
+    const auto bigKnobSize = boundsFWidth * 0.3f;
+    const auto bigKnobBounds = boundsF.withSize(bigKnobSize, bigKnobSize).withCentre({boundsF.getCentreX(), boundsFHeight * 0.15f});
+    const float delta = boundsFWidth * 0.3f;
     driveKnob.setBounds(bigKnobBounds.translated(-delta, 0.f).toNearestInt());
     levelKnob.setBounds(bigKnobBounds.translated(delta, 0.f).toNearestInt());
 
-    const auto smallKnobSize = bigKnobSize * 0.75f;
+    const auto smallKnobSize = bigKnobSize;
     const auto smallKnobBounds = bigKnobBounds.withSizeKeepingCentre(smallKnobSize, smallKnobSize).translated(0.f, boundsFHeight * 0.15f);
     toneKnob.setBounds(smallKnobBounds.toNearestInt());
 
-    const auto labelHeight = boundsFHeight * 0.05f;
-    const auto labelFont = APFonts::arimoBold(labelHeight * 0.7f);
     const auto placeBelow = [&](AAUITools::PrintedText& label, const juce::Component& knob)
     {
         const auto knobBounds = knob.getBounds().toFloat();
@@ -98,22 +104,16 @@ void AmpPusherEditor::resized()
     const auto modeLabelHeight = modeLabelWidth * static_cast<float>(modeLabel808Image.getHeight()) / static_cast<float>(modeLabel808Image.getWidth());
     odModeLabel.setBounds(boundsF.withSize(modeLabelWidth, modeLabelHeight).withCentre(modeLabelCentre).toNearestInt());
 
-    const auto ledSize = boundsFWidth * 0.125f;
-    const auto bypassLedBounds = boundsF.withSizeKeepingCentre(ledSize, ledSize);
-    // bypassLED.setBounds(bypassLedBounds.toNearestInt());
     const auto footswitchSize = boundsFWidth * 0.275f;
-    const auto footswitchBounds = bypassLedBounds.withSize(footswitchSize, footswitchSize).withCentre({boundsF.getCentreX(), boundsFHeight * 0.625f});
-    // const auto footswitchBounds = bypassLedBounds.withSizeKeepingCentre(footswitchSize, footswitchSize).withY(bypassLedBounds.getBottom() + ledSize * 0.4f);
+    const auto footswitchBounds = boundsF.withSize(footswitchSize, footswitchSize).withCentre({boundsF.getCentreX(), boundsFHeight * 0.625f});
     bypassFootswitch.setBounds(footswitchBounds.toNearestInt());
 
-    const auto leftLedBounds = boundsF.withSize(ledSize, ledSize).withCentre({boundsFWidth * 0.2f, footswitchBounds.getCentreY()});
-    const auto rightLedBounds = boundsF.withSize(ledSize, ledSize).withCentre({boundsFWidth * 0.8f, footswitchBounds.getCentreY()});
+    const auto ledSize = boundsFWidth * 0.125f;
+    const auto bypassLedBounds = boundsF.withSizeKeepingCentre(ledSize, ledSize);
+    const auto leftLedBounds = bypassLedBounds.withCentre({boundsFWidth * 0.2f, footswitchBounds.getCentreY()});
+    const auto rightLedBounds = bypassLedBounds.withCentre({boundsFWidth * 0.8f, footswitchBounds.getCentreY()});
     bypassLED.setBounds(leftLedBounds.toNearestInt());
     secondBypassLED.setBounds(rightLedBounds.toNearestInt());
-
-    const auto switchSize = boundsFWidth * 0.25f;
-    odModeSwitch.setBounds(boundsF.withSizeKeepingCentre(switchSize, switchSize).withY(boundsFHeight * (-0.01f)).toNearestInt());
-    // odModeSwitch.setBounds(boundsF.withSize(switchSize, switchSize).withCentre({boundsFWidth * 0.1f, boundsFHeight * 0.775f}).toNearestInt());
 
     const auto resizeButtonSize = boundsFHeight * 0.04f;
     const auto resizeButtonBounds = boundsF.withSize (resizeButtonSize, resizeButtonSize).withRightX(boundsFWidth).withBottomY(boundsFHeight);
