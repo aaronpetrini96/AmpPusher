@@ -67,7 +67,7 @@ juce::AudioProcessorEditor* AmpPusherProcessor::createEditor()
 
 void AmpPusherProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
-    if (auto xml = parameters.copyState().createXml())
+    if (const auto xml = parameters.copyState().createXml())
         copyXmlToBinary (*xml, destData);
 }
 
