@@ -11,9 +11,8 @@ namespace APColors
     inline const juce::Colour ledOff {45, 45, 48};
 
     inline const juce::Colour activeNeonBlue {64, 196, 255};
-    inline const juce::Colour iconSVGColor {100, 100, 100};
-    inline const juce::Colour iconNormalColor {200, 200, 200};
-    inline const juce::Colour iconOverColor {120, 120, 120};
+    inline const juce::Colour iconSVGColor {255, 255, 255};
+    inline const juce::Colour iconOverColor {100, 100, 100};
     inline const juce::Colour presetBoxBackground {35, 42, 60};
 }
 

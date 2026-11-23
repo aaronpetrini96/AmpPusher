@@ -33,8 +33,8 @@ private:
     juce::Image pedalBoxImage {juce::ImageCache::getFromMemory(BinaryData::pedalBoxWithTapev1_png, BinaryData::pedalBoxWithTapev1_pngSize)};
     juce::Image metalKnobBaseImage {juce::ImageCache::getFromMemory(BinaryData::blackMetalKnobBase_png, BinaryData::blackMetalKnobBase_pngSize)};
     juce::Image metalKnobRotorImage {juce::ImageCache::getFromMemory(BinaryData::blackMetalKnobRotor_png, BinaryData::blackMetalKnobRotor_pngSize)};
-    juce::DrawableImage switchUpDrawable {juce::ImageCache::getFromMemory(BinaryData::switchUP_png, BinaryData::switchUP_pngSize)};
-    juce::DrawableImage switchDownDrawable {juce::ImageCache::getFromMemory(BinaryData::switchDOWN_png, BinaryData::switchDOWN_pngSize)};
+    juce::DrawableImage switchUpDrawable {juce::ImageCache::getFromMemory(BinaryData::switchLeft_png, BinaryData::switchLeft_pngSize)};
+    juce::DrawableImage switchDownDrawable {juce::ImageCache::getFromMemory(BinaryData::switchRight_png, BinaryData::switchRight_pngSize)};
     juce::DrawableImage footswitchDownDrawable {juce::ImageCache::getFromMemory(BinaryData::footswitchDown_png, BinaryData::footswitchDown_pngSize)};
     juce::DrawableImage footswitchUpDrawable {juce::ImageCache::getFromMemory(BinaryData::footswitchUp_png, BinaryData::footswitchUp_pngSize)};
     juce::Image modeLabel808Image {juce::ImageCache::getFromMemory(BinaryData::modeLabel808_png, BinaryData::modeLabel808_pngSize)};
@@ -54,6 +54,7 @@ private:
     juce::AudioProcessorValueTreeState::ButtonAttachment odModeSwitchAttachment {audioProcessor.parameters, ParamNames::getODModeNames().id, odModeSwitch};
 
     BypassLED bypassLED {*audioProcessor.parameters.getParameter(ParamNames::getBypassNames().id), *audioProcessor.parameters.getParameter(ParamNames::getODModeNames().id)};
+    BypassLED secondBypassLED {*audioProcessor.parameters.getParameter(ParamNames::getBypassNames().id), *audioProcessor.parameters.getParameter(ParamNames::getODModeNames().id)};
     juce::DrawableButton bypassFootswitch {"bypassButton", juce::DrawableButton::ImageFitted};
     juce::AudioProcessorValueTreeState::ButtonAttachment bypassFootswitchAttachment {audioProcessor.parameters, ParamNames::getBypassNames().id, bypassFootswitch};
 

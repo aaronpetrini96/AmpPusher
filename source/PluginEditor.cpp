@@ -8,10 +8,10 @@ AmpPusherEditor::AmpPusherEditor (AmpPusherProcessor& p)
         addAndMakeVisible(label);
     for (auto* knob : {&driveKnob, &levelKnob, &toneKnob})
     {
-        knob->setMouseDragSensitivity(350);
+        knob->setMouseDragSensitivity(300);
         addAndMakeVisible(knob);
     }
-    toneKnob.setMouseDragSensitivity(250);
+    // toneKnob.setMouseDragSensitivity(250);
     odModeLabel.setInterceptsMouseClicks(false, false);
     addAndMakeVisible(odModeLabel);
 
@@ -25,7 +25,11 @@ AmpPusherEditor::AmpPusherEditor (AmpPusherProcessor& p)
     };
     updateOdModeLabel();
 
-    addAndMakeVisible(bypassLED);
+    for (auto* led : {&bypassLED, &secondBypassLED})
+    {
+        addAndMakeVisible(led);
+
+    }
     AAUITools::setToggleImageButton(bypassFootswitch, footswitchUpDrawable, footswitchUpDrawable, footswitchDownDrawable, footswitchDownDrawable);
     addAndMakeVisible(bypassFootswitch);
 
@@ -66,22 +70,23 @@ void AmpPusherEditor::resized()
     const auto boundsFWidth = boundsF.getWidth();
     const auto boundsFHeight = boundsF.getHeight();
 
-    const auto bigKnobSize = boundsFWidth * 0.33f;
-    const auto bigKnobBounds = boundsF.withSize(bigKnobSize, bigKnobSize).withCentre({boundsF.getCentreX(), boundsFHeight * 0.125f});
-    driveKnob.setBounds(bigKnobBounds.withX(boundsFWidth * 0.25f - bigKnobSize * 0.5f).toNearestInt());
-    levelKnob.setBounds(bigKnobBounds.withX(boundsFWidth * 0.75f - bigKnobSize  * 0.5f).toNearestInt());
+    const auto bigKnobSize = boundsFWidth * 0.325f;
+    const auto bigKnobBounds = boundsF.withSize(bigKnobSize, bigKnobSize).withCentre({boundsF.getCentreX(), boundsFHeight * 0.15f});
+    const float delta = boundsFWidth * 0.275f;
+    driveKnob.setBounds(bigKnobBounds.translated(-delta, 0.f).toNearestInt());
+    levelKnob.setBounds(bigKnobBounds.translated(delta, 0.f).toNearestInt());
 
-    const auto smallKnobSize = boundsFWidth * 0.22f;
+    const auto smallKnobSize = bigKnobSize * 0.8f;
     const auto smallKnobBounds = bigKnobBounds.withSizeKeepingCentre(smallKnobSize, smallKnobSize).translated(0.f, boundsFHeight * 0.15f);
     toneKnob.setBounds(smallKnobBounds.toNearestInt());
 
     const auto labelHeight = boundsFHeight * 0.05f;
-    const auto labelFont = APFonts::arimoBold(labelHeight * 0.65f);
+    const auto labelFont = APFonts::arimoBold(labelHeight * 0.7f);
     const auto placeBelow = [&](AAUITools::PrintedText& label, const juce::Component& knob)
     {
         const auto knobBounds = knob.getBounds().toFloat();
         label.setFont(labelFont);
-        label.setBounds(knobBounds.withY(knobBounds.getBottom()).withHeight(labelHeight).toNearestInt());
+        label.setBounds(knobBounds.withY(knobBounds.getBottom() + labelHeight * 0.1f).withHeight(labelHeight).toNearestInt());
     };
 
     placeBelow(driveLabel, driveKnob);
@@ -93,18 +98,25 @@ void AmpPusherEditor::resized()
     const auto modeLabelHeight = modeLabelWidth * static_cast<float>(modeLabel808Image.getHeight()) / static_cast<float>(modeLabel808Image.getWidth());
     odModeLabel.setBounds(boundsF.withSize(modeLabelWidth, modeLabelHeight).withCentre(modeLabelCentre).toNearestInt());
 
-    const auto ledSize = boundsFWidth * 0.15f;
+    const auto ledSize = boundsFWidth * 0.125f;
     const auto bypassLedBounds = boundsF.withSizeKeepingCentre(ledSize, ledSize);
-    bypassLED.setBounds(bypassLedBounds.toNearestInt());
-    const auto footswitchSize = boundsFWidth * 0.27f;
-    bypassFootswitch.setBounds(bypassLedBounds.withSizeKeepingCentre(footswitchSize, footswitchSize).withY(bypassLedBounds.getBottom() + ledSize * 0.1f).toNearestInt());
+    // bypassLED.setBounds(bypassLedBounds.toNearestInt());
+    const auto footswitchSize = boundsFWidth * 0.275f;
+    const auto footswitchBounds = bypassLedBounds.withSize(footswitchSize, footswitchSize).withCentre({boundsF.getCentreX(), boundsFHeight * 0.6f});
+    // const auto footswitchBounds = bypassLedBounds.withSizeKeepingCentre(footswitchSize, footswitchSize).withY(bypassLedBounds.getBottom() + ledSize * 0.4f);
+    bypassFootswitch.setBounds(footswitchBounds.toNearestInt());
 
-    const auto switchSize = boundsFWidth * 0.225f;
-    odModeSwitch.setBounds(boundsF.withSize(switchSize, switchSize).withCentre({boundsFWidth * 0.1f, boundsFHeight * 0.775f}).toNearestInt());
+    const auto leftLedBounds = boundsF.withSize(ledSize, ledSize).withCentre({boundsFWidth * 0.2f, footswitchBounds.getCentreY()});
+    const auto rightLedBounds = boundsF.withSize(ledSize, ledSize).withCentre({boundsFWidth * 0.8f, footswitchBounds.getCentreY()});
+    bypassLED.setBounds(leftLedBounds.toNearestInt());
+    secondBypassLED.setBounds(rightLedBounds.toNearestInt());
 
-    const auto resizeButtonSize = boundsFHeight * 0.0375f;
-    const auto resizeButtonGap = resizeButtonSize * 0.5f;
-    const auto resizeButtonBounds = boundsF.withSize (resizeButtonSize, resizeButtonSize).withCentre ({boundsF.getRight() - resizeButtonGap, boundsF.getBottom() - resizeButtonGap});
+    const auto switchSize = boundsFWidth * 0.25f;
+    odModeSwitch.setBounds(boundsF.withSizeKeepingCentre(switchSize, switchSize).withY(boundsFHeight * (-0.01f)).toNearestInt());
+    // odModeSwitch.setBounds(boundsF.withSize(switchSize, switchSize).withCentre({boundsFWidth * 0.1f, boundsFHeight * 0.775f}).toNearestInt());
+
+    const auto resizeButtonSize = boundsFHeight * 0.04f;
+    const auto resizeButtonBounds = boundsF.withSize (resizeButtonSize, resizeButtonSize).withRightX(boundsFWidth).withBottomY(boundsFHeight);
     resizeButton.setBounds (resizeButtonBounds.toNearestInt());
 
     const auto sizeOptionsWidth = boundsFWidth * 0.45f;
@@ -137,8 +149,7 @@ void AmpPusherEditor::updateOdModeLabel()
 void AmpPusherEditor::updateModeColours()
 {
     const auto modeColour = odModeSwitch.getToggleState() ? APColors::ledYellow : APColors::ledGreen;
-    AAUITools::setIconButtonImages (resizeButton, BinaryData::resizeLines_svg, BinaryData::resizeLines_svgSize, APColors::iconSVGColor,
-                                    APColors::iconNormalColor.withAlpha (0.9f), APColors::iconSVGColor, APColors::iconOverColor, modeColour);
+    AAUITools::setIconButtonImages (resizeButton, BinaryData::resizeLines_svg, BinaryData::resizeLines_svgSize, APColors::iconSVGColor, APColors::iconOverColor, modeColour);
     resizeOptionsPopup.setSelectedTextColour (modeColour);
 }
 

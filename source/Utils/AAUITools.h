@@ -6,18 +6,15 @@
 namespace AAUITools
 {
     inline void setIconButtonImages (juce::DrawableButton& button, const void* iconData, const int iconDataSize,
-                                     const juce::Colour iconColour, const juce::Colour normalColour, const juce::Colour overColour, const juce::Colour activeColour, const juce::Colour activeOverColour)
+                                     const juce::Colour iconColour, const juce::Colour overColour, const juce::Colour activeColour)
     {
         if (const auto iconNormal = juce::Drawable::createFromImageData (iconData,  static_cast<size_t>(iconDataSize)))
         {
             const auto iconOver = iconNormal->createCopy();
             const auto iconActive = iconNormal->createCopy();
-            const auto iconActiveOver = iconNormal->createCopy();
-            iconNormal->replaceColour (iconColour, normalColour);
             iconOver->replaceColour (iconColour, overColour);
             iconActive->replaceColour (iconColour, activeColour);
-            iconActiveOver->replaceColour (iconColour, activeOverColour);
-            button.setImages (iconNormal.get(), iconOver.get(), iconActive.get(), nullptr, iconActive.get(), iconActiveOver.get());
+            button.setImages (iconNormal.get(), iconOver.get(), iconActive.get(), nullptr, iconActive.get());
             button.setEdgeIndent (0);
             button.setColour(juce::DrawableButton::ColourIds::backgroundColourId, juce::Colours::transparentBlack);
             button.setColour(juce::DrawableButton::ColourIds::backgroundOnColourId, juce::Colours::transparentBlack);
