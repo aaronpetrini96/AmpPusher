@@ -11,6 +11,8 @@ public:
         needed = ! juce::approximatelyEqual (hostSampleRate, modelSampleRate);
         hostIsFaster = hostSampleRate > modelSampleRate;
         maxHostBlockSize = maxHostBlockSizeToUse;
+        outputHeadStart = juce::jmax (
+            8, static_cast<int> (std::ceil ((inputMargin + 1) / hostToModelRatio)) + 2);
 
         maxModelBlockSize = static_cast<int> (std::ceil (maxHostBlockSize / hostToModelRatio)) + inputMargin;
         const auto fifoCapacity = maxHostBlockSize + maxModelBlockSize + outputHeadStart + 16;
@@ -99,9 +101,21 @@ private:
         }
         outputCount += numModelSamples;
 
+        const float silence {0.f};
+        const auto outputFifoIsEmpty = outputCount == 0;
+        const auto availableModelSamples = outputFifoIsEmpty ? 1 : outputCount;
+
         int usedModelSamples = 0;
         for (int ch = 0; ch < numChannels; ++ch)
-            usedModelSamples = toHostRate[static_cast<size_t> (ch)].process (1.0 / hostToModelRatio, outputFifo.getReadPointer (ch), buffer.getWritePointer (ch), numHostSamples);
+        {
+            const auto* modelSamples = outputFifoIsEmpty ? &silence : outputFifo.getReadPointer (ch);
+            usedModelSamples = toHostRate[static_cast<size_t> (ch)].process (
+                1.0 / hostToModelRatio, modelSamples, buffer.getWritePointer (ch),
+                numHostSamples, availableModelSamples, 0);
+        }
+
+        if (outputFifoIsEmpty)
+            usedModelSamples = 0;
         jassert (usedModelSamples <= outputCount);
         dropFront (outputFifo, outputCount, usedModelSamples, numChannels);
     }
@@ -124,7 +138,7 @@ private:
 
     static constexpr int maxChannels {2};
     static constexpr int inputMargin {2};
-    static constexpr int outputHeadStart {8};
+    int outputHeadStart {8};
 
     std::array<juce::LagrangeInterpolator, maxChannels> toModelRate;
     std::array<juce::LagrangeInterpolator, maxChannels> toHostRate;
