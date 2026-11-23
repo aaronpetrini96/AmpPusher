@@ -112,7 +112,8 @@ void AmpPusherEditor::resized()
     secondBypassLED.setBounds(rightLedBounds.toNearestInt());
 
     const auto resizeButtonSize = boundsFHeight * 0.04f;
-    const auto resizeButtonBounds = boundsF.withSize (resizeButtonSize, resizeButtonSize).withRightX(boundsFWidth).withBottomY(boundsFHeight);
+    const auto resizeButtonBounds = boundsF.withSize (resizeButtonSize, resizeButtonSize).withRightX(boundsFWidth - resizeButtonSize * 0.25f)
+                                                .withBottomY(boundsFHeight - resizeButtonSize * 0.25f);
     resizeButton.setBounds (resizeButtonBounds.toNearestInt());
 
     const auto sizeOptionsWidth = boundsFWidth * 0.45f;
