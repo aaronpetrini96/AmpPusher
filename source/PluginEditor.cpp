@@ -11,7 +11,6 @@ AmpPusherEditor::AmpPusherEditor (AmpPusherProcessor& p)
         knob->setMouseDragSensitivity(300);
         addAndMakeVisible(knob);
     }
-    // toneKnob.setMouseDragSensitivity(250);
     odModeLabel.setInterceptsMouseClicks(false, false);
     addAndMakeVisible(odModeLabel);
 
@@ -26,10 +25,7 @@ AmpPusherEditor::AmpPusherEditor (AmpPusherProcessor& p)
     updateOdModeLabel();
 
     for (auto* led : {&bypassLED, &secondBypassLED})
-    {
         addAndMakeVisible(led);
-
-    }
     AAUITools::setToggleImageButton(bypassFootswitch, footswitchUpDrawable, footswitchUpDrawable, footswitchDownDrawable, footswitchDownDrawable);
     addAndMakeVisible(bypassFootswitch);
 

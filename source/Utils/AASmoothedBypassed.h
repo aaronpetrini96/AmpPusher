@@ -5,7 +5,7 @@
 #pragma once
 
 #include <algorithm>
-#include <cassert>
+#include <juce_core/juce_core.h>
 #include <cstddef>
 #include <vector>
 
@@ -16,7 +16,7 @@ public:
 
     void prepare (double newSampleRate, int maxBlockSize, int numChannels, bool startBypassed, int latencySamples)
     {
-        assert (newSampleRate > 0.0 && maxBlockSize > 0 && numChannels > 0 && latencySamples >= 0);
+        jassert (newSampleRate > 0.0 && maxBlockSize > 0 && numChannels > 0 && latencySamples >= 0);
 
         maxChunkSize = std::max(1, maxBlockSize);
         const auto channelCount = static_cast<std::size_t>(numChannels);
@@ -36,7 +36,7 @@ public:
 
     void setRampSeconds (double newRampSeconds)
     {
-        assert(newRampSeconds >= 0.0);
+        jassert (newRampSeconds >= 0.0);
         rampSeconds = newRampSeconds;
         updateStepPerSample();
     }
@@ -54,7 +54,7 @@ public:
     template <typename ProcessFunction>
     void process (float* const* channelsData, int numChannels, int numSamples, ProcessFunction&& processUnit)
     {
-        assert (numChannels > 0 && numChannels <= static_cast<int>(chunkChannels.size()) && numSamples >= 0);
+        jassert (numChannels > 0 && numChannels <= static_cast<int>(chunkChannels.size()) && numSamples >= 0);
 
         const auto channelsToUse = std::min(numChannels, static_cast<int>(chunkChannels.size()));
         const auto delayLength = delayChannels.front().size();

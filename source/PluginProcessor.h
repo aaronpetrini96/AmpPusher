@@ -40,8 +40,6 @@ public:
 private:
     using PedalModel = RTNeural::ModelT<float, 3, 1, RTNeural::GRULayerT<float, 3, 32>, RTNeural::DenseT<float, 32, 1>>;
 
-
-
     std::array<PedalModel, 2> models808;
     std::array<PedalModel, 2> modelsS1D;
     int activeODMode {0};
