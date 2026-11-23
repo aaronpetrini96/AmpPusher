@@ -69,6 +69,7 @@ private:
     }
 
     void linkParameters();
+    void resetModels();
 
     enum class SmootherUpdateMode
     {

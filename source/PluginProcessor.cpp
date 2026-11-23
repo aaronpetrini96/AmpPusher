@@ -14,14 +14,8 @@ AmpPusherProcessor::AmpPusherProcessor()
 
 void AmpPusherProcessor::prepareToPlay (double sampleRate, int)
 {
-    for (auto* models : {&models808, &modelsS1D})
-        for (auto& model : *models)
-            model.reset();
-
-    activeODMode = odModeParam->getIndex();
-
     switchCrossfade.reset (sampleRate, 0.02);
-    switchCrossfade.setCurrentAndTargetValue (1.0f);
+    resetModels();
     smoothedEffectMix.reset (sampleRate, 0.02);
 
     constexpr double smoothingTime = 0.05;
@@ -35,6 +29,13 @@ void AmpPusherProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::M
 {
     juce::ScopedNoDenormals noDenormals;
     updateSmoothersFromParams (SmootherUpdateMode::liveInRealTime);
+
+    if (smoothedEffectMix.getCurrentValue() == 0.0f)
+    {
+        if (smoothedEffectMix.getTargetValue() == 0.0f)
+            return;
+        resetModels();
+    }
 
     const auto odModeIndex = odModeParam->getIndex();
     auto& activeModels = odModeIndex == 0 ? models808 : modelsS1D;
@@ -140,6 +141,16 @@ void AmpPusherProcessor::linkParameters()
     levelParam = getParam<juce::AudioParameterFloat> (ParamNames::getLevelNames().id);
     odModeParam = getParam<juce::AudioParameterChoice> (ParamNames::getODModeNames().id);
     bypassParam = getParam<juce::AudioParameterBool> (ParamNames::getBypassNames().id);
+}
+
+void AmpPusherProcessor::resetModels()
+{
+    for (auto* models : {&models808, &modelsS1D})
+        for (auto& model : *models)
+            model.reset();
+
+    activeODMode = odModeParam->getIndex();
+    switchCrossfade.setCurrentAndTargetValue (1.0f);
 }
 
 void AmpPusherProcessor::updateSmoothersFromParams (SmootherUpdateMode mode)
