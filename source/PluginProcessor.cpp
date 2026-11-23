@@ -99,7 +99,8 @@ void AmpPusherProcessor::getStateInformation (juce::MemoryBlock& destData)
 void AmpPusherProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     if (auto xml = getXmlFromBinary (data, sizeInBytes))
-        parameters.replaceState (juce::ValueTree::fromXml (*xml));
+        if (xml->hasTagName (parameters.state.getType()))
+            parameters.replaceState (juce::ValueTree::fromXml (*xml));
 }
 
 float AmpPusherProcessor::levelToGain (float level, int odMode)
