@@ -10,7 +10,7 @@ public:
         hostToModelRatio = hostSampleRate / modelSampleRate;
         needed = ! juce::approximatelyEqual (hostSampleRate, modelSampleRate);
         hostIsFaster = hostSampleRate > modelSampleRate;
-        maxHostBlockSize = maxHostBlockSizeToUse;
+        maxHostBlockSize = juce::jmax (1, maxHostBlockSizeToUse);
         outputHeadStart = juce::jmax (
             8, static_cast<int> (std::ceil ((inputMargin + 1) / hostToModelRatio)) + 2);
 
