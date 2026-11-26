@@ -33,3 +33,39 @@ Null depth against the source emulation on held-out audio, across all 25 Drive Ã
 ## Tech
 
 C++20, JUCE, RTNeural, CMake, Python (PyTorch).
+
+## Formats
+
+- macOS: AU and VST3
+
+## Building
+
+Requires CMake 3.22 or newer, Ninja and a C++20 compiler. JUCE and RTNeural are included as Git submodules.
+
+```bash
+git clone --recurse-submodules https://github.com/aaronpetrini96/AmpPusher.git
+cd AmpPusher
+```
+
+macOS (universal binary):
+
+```bash
+cmake --preset mac_ninja_multi
+cmake --build --preset mac_ninja_multi_release
+```
+
+The built plugins are copied to the system plugin folders automatically.
+
+## Project structure
+
+```
+source/
+  PluginProcessor.*   Parameters, signal chain and state
+  PluginEditor.*      Editor layout and UI size menu
+  DSP/                48 kHz resampler around the models
+  UI/                 Components, popups and LookAndFeel classes
+  Utils/              Parameter names, bypass, UI sizing and helpers
+models/               Model weights loaded by the plugin
+tests/                C++ parity test
+Resources/            Images, icons and fonts
+```
