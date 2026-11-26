@@ -1,4 +1,7 @@
+"""Trains a conditioned GRU model of one pedal and saves its best checkpoint."""
+
 import argparse
+
 import numpy as np
 import torch
 
@@ -14,7 +17,7 @@ def parse_arguments() -> argparse.Namespace:
     """Command-line options; anything not given keeps its default."""
     parser = argparse.ArgumentParser(description="Train a conditioned GRU pedal model.")
     parser.add_argument("pedal", choices=sorted(PEDAL_DIRS))
-    parser.add_argument("--hidden-size", type=int, default=16)
+    parser.add_argument("--hidden-size", type=int, default=32)
     parser.add_argument("--steps", type=int, default=2000)
     parser.add_argument("--learning-rate", type=float, default=0.005)
     parser.add_argument("--chunk-count", type=int, default=32)
@@ -31,10 +34,13 @@ def main() -> None:
     rng = np.random.default_rng(arguments.seed)
 
     dataset = PedalDataset.load(arguments.pedal)
-    validation_inputs, validation_targets = dataset.batch(np.random.default_rng(999), 64, arguments.chunk_length, validation=True)
+    validation_inputs, validation_targets = dataset.batch(
+        np.random.default_rng(999), 64, arguments.chunk_length, validation=True
+    )
 
     model = PedalNet(hidden_size=arguments.hidden_size)
     optimizer = torch.optim.Adam(model.parameters(), lr=arguments.learning_rate)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=arguments.steps)
 
     MODELS_DIR.mkdir(exist_ok=True)
     checkpoint_path = MODELS_DIR / f"{arguments.pedal}.pt"
@@ -46,14 +52,17 @@ def main() -> None:
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+        scheduler.step()
 
-        if step % 100 == 0:
+        if step % 500 == 0:
             with torch.no_grad():
                 validation_loss = esr(model(validation_inputs), validation_targets, arguments.warm_up).item()
             if validation_loss < best_validation_loss:
                 best_validation_loss = validation_loss
                 torch.save({"state_dict": model.state_dict(), "config": vars(arguments)}, checkpoint_path)
-            print(f"step {step}: training {loss.item():.5f}, validation {validation_loss:.5f}, best {best_validation_loss:.5f}")
+            print(
+                f"step {step}: training {loss.item():.5f}, validation {validation_loss:.5f}, best {best_validation_loss:.5f}"
+            )
 
 
 if __name__ == "__main__":

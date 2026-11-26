@@ -10,7 +10,8 @@ namespace ParamNames
     };
 
     inline ParamName getDriveNames() { return {"Drive", "Drive"}; }
-    inline ParamName getBrightNames() { return {"Bright", "Bright"}; }
+    inline ParamName getToneNames() { return {"Tone", "Tone"}; }
     inline ParamName getLevelNames() { return {"Level", "Level"}; }
     inline ParamName getODModeNames() { return {"ODMode", "OD Mode"}; }
+    inline ParamName getBypassNames() { return {"Bypass", "Bypass"}; }
 }

@@ -1,4 +1,5 @@
 #include "PluginProcessor.h"
+#include "PluginEditor.h"
 #include <BinaryData.h>
 
 AmpPusherProcessor::AmpPusherProcessor()
@@ -7,68 +8,93 @@ AmpPusherProcessor::AmpPusherProcessor()
                           .withOutput ("Output", juce::AudioChannelSet::stereo(), true))
 {
     linkParameters();
-
-    const auto* modelJsonBegin = BinaryData::ts808_json;
-    const auto* modelJsonEnd = modelJsonBegin + BinaryData::ts808_jsonSize;
-    const auto weights = nlohmann::json::parse (modelJsonBegin, modelJsonEnd);
-
-    for (auto& pedalModel : pedalModels)
-    {
-        RTNeural::torch_helpers::loadGRU<float> (weights, "gru.", pedalModel.get<0>());
-        RTNeural::torch_helpers::loadDense<float> (weights, "output.", pedalModel.get<1>());
-    }
+    loadModels (models808, BinaryData::ts808_json, BinaryData::ts808_jsonSize);
+    loadModels (modelsS1D, BinaryData::sd1_json, BinaryData::sd1_jsonSize);
 }
 
-void AmpPusherProcessor::prepareToPlay (double sampleRate, int)
+void AmpPusherProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    for (auto& pedalModel : pedalModels)
-        pedalModel.reset();
+    resampler.prepare (sampleRate, modelSampleRate, samplesPerBlock, getTotalNumOutputChannels());
+    setLatencySamples (resampler.getLatencySamples());
+    const auto processingRate = resampler.isNeeded() ? modelSampleRate : sampleRate;
+
+    switchCrossfade.reset (processingRate, 0.02);
+    resetModels();
+    smoothedBypass.setRampSeconds (0.02);
+    smoothedBypass.prepare (sampleRate, samplesPerBlock, getTotalNumOutputChannels(),
+                            bypassParam->get(), getLatencySamples());
+
     constexpr double smoothingTime = 0.05;
-    smoothedDrive.reset (sampleRate, smoothingTime);
-    smoothedDrive.setCurrentAndTargetValue (driveParam->get());
-    smoothedBright.reset(sampleRate, smoothingTime);
-    smoothedBright.setCurrentAndTargetValue (brightParam->get() ? 1.0f : 0.0f);
-    smoothedLevelGain.reset (sampleRate, smoothingTime);
-    smoothedLevelGain.setCurrentAndTargetValue (levelToGain (levelParam->get()));
+    for (auto* smoother : {&smoothedDrive, &smoothedTone, &smoothedGain808, &smoothedGainS1D})
+        smoother->reset (processingRate, smoothingTime);
+
+    updateSmoothersFromParams (SmootherUpdateMode::initialize);
 }
 
 void AmpPusherProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
 {
     juce::ScopedNoDenormals noDenormals;
-    smoothedDrive.setTargetValue(driveParam->get());
-    smoothedBright.setTargetValue(brightParam->get() ? 1.0f : 0.0f);
-    smoothedLevelGain.setTargetValue(levelToGain(levelParam->get()));
 
-    const int numChannels = std::min(buffer.getNumChannels(), static_cast<int>(pedalModels.size()));
+    const auto wasFullyBypassed = smoothedBypass.isFullyBypassed();
+    smoothedBypass.setBypassed (bypassParam->get());
 
-    for (int n = 0; n < buffer.getNumSamples(); ++n) {
-        const float drive = smoothedDrive.getNextValue();
-        const float bright = smoothedBright.getNextValue();
-        const float level = smoothedLevelGain.getNextValue();
+    if (wasFullyBypassed && ! smoothedBypass.isFullyBypassed())
+        resetModels();
 
-        for (int ch = 0; ch < numChannels; ++ch) {
-            auto* channelData = buffer.getWritePointer(ch);
-            const float modelInput[3] {channelData[n], drive, bright};
-            channelData[n] = pedalModels[static_cast<size_t>(ch)].forward (modelInput) * level;
-        }
-    }
+    updateSmoothersFromParams (smoothedBypass.isFullyBypassed()
+                                  ? SmootherUpdateMode::initialize
+                                  : SmootherUpdateMode::liveInRealTime);
+
+    smoothedBypass.process (buffer.getArrayOfWritePointers(), buffer.getNumChannels(), buffer.getNumSamples(),
+                           [this] (float* const* channelsData, int numChannels, int numSamples)
+    {
+        juce::AudioBuffer<float> processingBuffer (channelsData, numChannels, numSamples);
+
+        const auto processAtModelRate = [this] (juce::AudioBuffer<float>& modelRateBuffer, int modelSamples)
+        {
+            if (! smoothedBypass.isFullyBypassed())
+                processModels (modelRateBuffer, modelSamples);
+        };
+
+        if (resampler.isNeeded())
+            resampler.process (processingBuffer, processAtModelRate);
+        else
+            processAtModelRate (processingBuffer, numSamples);
+    });
+}
+
+bool AmpPusherProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const
+{
+    const auto mainOutput = layouts.getMainOutputChannelSet();
+    if (mainOutput != juce::AudioChannelSet::mono() && mainOutput != juce::AudioChannelSet::stereo())
+        return false;
+
+    return layouts.getMainInputChannelSet() == mainOutput;
+}
+
+juce::AudioProcessorEditor* AmpPusherProcessor::createEditor()
+{
+    return new AmpPusherEditor (*this);
 }
 
 void AmpPusherProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
-    if (auto xml = parameters.copyState().createXml())
+    if (const auto xml = parameters.copyState().createXml())
         copyXmlToBinary (*xml, destData);
 }
 
 void AmpPusherProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     if (auto xml = getXmlFromBinary (data, sizeInBytes))
-        parameters.replaceState (juce::ValueTree::fromXml (*xml));
+        if (xml->hasTagName (parameters.state.getType()))
+            parameters.replaceState (juce::ValueTree::fromXml (*xml));
 }
 
-float AmpPusherProcessor::levelToGain (float level)
+float AmpPusherProcessor::levelToGain (float level, int odMode)
 {
-    constexpr  std::array<float, 5> decibelsAtKnob {-100.f, -32.f, 0.f, 7.5f, 12.f};
+    constexpr std::array<float, 5> decibelsAtKnob808 {-100.f, -32.f, 0.f, 7.5f, 12.f};
+    constexpr std::array<float, 5> decibelsAtKnobS1D {-100.f, 6.6f, 15.f, 19.2f, 21.f};
+    const auto& decibelsAtKnob = odMode == 0 ? decibelsAtKnob808 : decibelsAtKnobS1D;
     const auto position = juce::jlimit(0.f, 4.f, level / 2.5f);
     const auto lowerIndex = static_cast<size_t>(std::min(position, 3.f));
     const auto fraction = position - static_cast<float>(lowerIndex);
@@ -81,20 +107,106 @@ juce::AudioProcessorValueTreeState::ParameterLayout AmpPusherProcessor::createPa
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
     constexpr auto versionHint {1};
 
-    const auto drive = ParamNames::getDriveNames();
-    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID (drive.id, versionHint), drive.name, 0.0f, 1.0f, 0.5f));
-    const auto bright = ParamNames::getBrightNames();
-    layout.add (std::make_unique<juce::AudioParameterBool> (juce::ParameterID (bright.id, versionHint), bright.name, false));
-    const auto level = ParamNames::getLevelNames();
-    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID (level.id, versionHint), level.name, 0.0f, 10.0f, 5.0f));
+    auto names = ParamNames::getDriveNames();
+    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID (names.id, versionHint), names.name, 0.0f, 1.0f, 0.5f));
+    names = ParamNames::getToneNames();
+    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID (names.id, versionHint), names.name, 0.0f, 1.0f, 0.5f));
+    names = ParamNames::getLevelNames();
+    layout.add (std::make_unique<juce::AudioParameterFloat> (juce::ParameterID (names.id, versionHint), names.name, 0.0f, 10.0f, 5.0f));
+    names = ParamNames::getODModeNames();
+    layout.add (std::make_unique<juce::AudioParameterChoice> (juce::ParameterID (names.id, versionHint), names.name, juce::StringArray { "Green 808", "Yellow S1D" }, 0));
+    names = ParamNames::getBypassNames();
+    layout.add (std::make_unique<juce::AudioParameterBool> (juce::ParameterID (names.id, versionHint), names.name, false));
     return layout;
 }
 
 void AmpPusherProcessor::linkParameters()
 {
     driveParam = getParam<juce::AudioParameterFloat> (ParamNames::getDriveNames().id);
-    brightParam = getParam<juce::AudioParameterBool> (ParamNames::getBrightNames().id);
+    toneParam = getParam<juce::AudioParameterFloat> (ParamNames::getToneNames().id);
     levelParam = getParam<juce::AudioParameterFloat> (ParamNames::getLevelNames().id);
+    odModeParam = getParam<juce::AudioParameterChoice> (ParamNames::getODModeNames().id);
+    bypassParam = getParam<juce::AudioParameterBool> (ParamNames::getBypassNames().id);
+}
+
+void AmpPusherProcessor::resetModels()
+{
+    for (auto* models : {&models808, &modelsS1D})
+        for (auto& model : *models)
+            model.reset();
+
+    activeODMode = odModeParam->getIndex();
+    switchCrossfade.setCurrentAndTargetValue (1.0f);
+}
+
+void AmpPusherProcessor::processModels (juce::AudioBuffer<float>& buffer, int numSamples)
+{
+    const auto odModeIndex = odModeParam->getIndex();
+    auto& activeModels = odModeIndex == 0 ? models808 : modelsS1D;
+    auto& previousModels = odModeIndex == 0 ? modelsS1D : models808;
+
+    if (activeODMode != odModeIndex)
+    {
+        if (! switchCrossfade.isSmoothing())
+            for (auto& model : activeModels)
+                model.reset();
+        activeODMode = odModeIndex;
+
+        switchCrossfade.setCurrentAndTargetValue(1.0f - switchCrossfade.getCurrentValue());
+        switchCrossfade.setTargetValue(1.0f);
+    }
+
+    const int numChannels = std::min(buffer.getNumChannels(), static_cast<int>(activeModels.size()));
+
+    for (int n = 0; n < numSamples; ++n)
+    {
+        const float drive = smoothedDrive.getNextValue();
+        const float tone = smoothedTone.getNextValue();
+        const float gain808 = smoothedGain808.getNextValue();
+        const float gainS1D = smoothedGainS1D.getNextValue();
+        const float activeGain = odModeIndex == 0 ? gain808 : gainS1D;
+        const float previousGain = odModeIndex == 0 ? gainS1D : gain808;
+        const float switchCrossfadeValue = switchCrossfade.getNextValue();
+
+        for (int ch = 0; ch < numChannels; ++ch)
+        {
+            auto* channelData = buffer.getWritePointer(ch);
+            const float drySample = channelData[n];
+            const float modelInput[3] {drySample, drive, tone};
+            float pedalOutput = activeModels[static_cast<size_t>(ch)].forward(modelInput) * activeGain;
+            if (switchCrossfadeValue < 1.0f)
+                pedalOutput = pedalOutput * switchCrossfadeValue + previousModels[static_cast<size_t>(ch)].forward(modelInput) * previousGain * (1.0f - switchCrossfadeValue);
+            channelData[n] = pedalOutput;
+        }
+    }
+}
+
+void AmpPusherProcessor::updateSmoothersFromParams (SmootherUpdateMode mode)
+{
+    const auto update = [mode] (juce::SmoothedValue<float>& smoother, float value)
+    {
+        if (mode == SmootherUpdateMode::initialize)
+            smoother.setCurrentAndTargetValue (value);
+        else
+            smoother.setTargetValue (value);
+    };
+
+    const float level = levelParam->get();
+    update (smoothedDrive, driveParam->get());
+    update (smoothedTone, toneParam->get());
+    update (smoothedGain808, levelToGain (level, 0));
+    update (smoothedGainS1D, levelToGain (level, 1));
+}
+
+void AmpPusherProcessor::loadModels (std::array<PedalModel, 2>& models, const char* jsonData, int jsonSize)
+{
+    const auto weights = nlohmann::json::parse (jsonData, jsonData + jsonSize);
+
+    for (auto& pedalModel : models)
+    {
+        RTNeural::torch_helpers::loadGRU<float> (weights, "gru.", pedalModel.get<0>());
+        RTNeural::torch_helpers::loadDense<float> (weights, "output.", pedalModel.get<1>());
+    }
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()

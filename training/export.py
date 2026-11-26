@@ -23,7 +23,7 @@ def parse_arguments() -> argparse.Namespace:
 
 def load_model(pedal: str) -> tuple[PedalNet, dict]:
     """Rebuilds the trained model from its checkpoint and returns it with its training options."""
-    checkpoint = torch.load(MODELS_DIR/f"{pedal}.pt")
+    checkpoint = torch.load(MODELS_DIR / f"{pedal}.pt")
     config = checkpoint["config"]
     model = PedalNet(hidden_size=config["hidden_size"])
     model.load_state_dict(checkpoint["state_dict"])
@@ -44,9 +44,9 @@ def export_parity(model: PedalNet, pedal: str) -> None:
     """Writes 100 ms of unseen input and the model's output, for the C++ parity test."""
     dataset = PedalDataset.load(pedal)
     test_length = SAMPLE_RATE // 10
-    test_dry = dataset.dry[dataset.validation_start:dataset.validation_start + test_length]
+    test_dry = dataset.dry[dataset.validation_start : dataset.validation_start + test_length]
     test_conditions = np.tile([1.0, 1.0], (test_length, 1)).astype(np.float32)
-    model_input = np.concatenate([test_dry[:, None], test_conditions], axis=1) 
+    model_input = np.concatenate([test_dry[:, None], test_conditions], axis=1)
     with torch.no_grad():
         expected = model(torch.from_numpy(model_input[None]))[0, :, 0].numpy()
 
